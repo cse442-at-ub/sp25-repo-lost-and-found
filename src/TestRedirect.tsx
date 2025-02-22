@@ -1,8 +1,11 @@
+import { Button } from '@mui/material'
 import React from 'react'
 
 function TestRedirect() {
   return (
-    <div>TestRedirect</div>
+    <div>
+        <Button variant="contained">Contained</Button>
+    </div>
   )
 }
 
