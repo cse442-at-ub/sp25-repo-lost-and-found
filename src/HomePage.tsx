@@ -4,8 +4,11 @@ import { Box, Button, Card, CardActionArea, CardContent, CardMedia, Grid, Grid2,
 import ReportLostItem from '../public/report-lost-item.png'
 import ReportFoundItem from '../public/report-found-item.png'
 import ClaimItem from '../public/claim-item.png'
+import { useNavigate } from 'react-router'
 
-function HomePage() {
+function HomePage() {   
+    const navigate = useNavigate();
+
   return (
     <>
         <LayoutDefault>
