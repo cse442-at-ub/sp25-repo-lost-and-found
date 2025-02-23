@@ -78,7 +78,7 @@ function HomePage() {
                 </Grid>
 
                 <Grid2 container columns={{ xs: 4, sm: 8, md: 12 }} marginTop={'auto'} backgroundColor={'black'} padding={'15px'}>
-                    <Grid2 item size={4}>
+                    <Grid2 item size={4} color={"grey"}>
                         <Typography variant="h4" gutterBottom>
                         About
                         </Typography>
