@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Button, TextField, Typography } from '@mui/material';
+import { Box, Button, Link, TextField, Typography } from '@mui/material';
 import LayoutDefault from './LayoutDefault';
 
 function LoginPage() {
@@ -10,6 +10,9 @@ function LoginPage() {
         <Typography variant="h4">Login</Typography>
         <TextField label="Email" variant="outlined" sx={{ margin: '10px', width: '300px' }} />
         <TextField label="Password" type="password" variant="outlined" sx={{ margin: '10px', width: '300px' }} />
+	      <Link href="./#forgot-password" sx={{ marginBottom: '10px', cursor: 'pointer' }}>
+            Forgot Password?
+         </Link>
         <Button variant="contained" sx={{ marginTop: '10px' }}>Login</Button>
       </Box>
       </LayoutDefault>
