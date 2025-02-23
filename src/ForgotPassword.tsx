@@ -1,9 +1,11 @@
-import { useState, React } from "react";
+import { useState } from "react";
 import { Button, TextField, Box, Container, Card, CardContent } from "@mui/material";
+import LayoutDefault from "./LayoutDefault";
 
-const ForgotPassword = (e) => {
+const ForgotPassword = (e: any) => {
   const [email, setEmail] = useState("");
   return (
+    <LayoutDefault>
     <Container>
       <Box sx={{display: "flex", flexDirection: "column",
           alignItems: "center"}}>
@@ -23,6 +25,7 @@ const ForgotPassword = (e) => {
         </Card>
       </Box>
     </Container>
+    </LayoutDefault>
   );
 };
 

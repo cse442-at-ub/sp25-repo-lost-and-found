@@ -1,7 +1,8 @@
-import { React, useState } from "react";
+import { useState } from "react";
 import { Checkbox, List, ListItem, Button, TextField, Box, Container, Card, CardContent } from "@mui/material";
+import LayoutDefault from "./LayoutDefault";
 
-const ForgotPassword = (e) => {
+const ResetPassword = (e) => {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const passwdRules = [
@@ -19,6 +20,7 @@ const ForgotPassword = (e) => {
      cond: (s) => ! /[^a-zA-Z0-9!@#$%^&()\-_=]/.test(s)}
   ];
   return (
+    <LayoutDefault>
     <Container>
       <Box sx={{display: "flex", flexDirection: "column",
           alignItems: "center"}}>
@@ -58,7 +60,8 @@ const ForgotPassword = (e) => {
         </Card>
       </Box>
     </Container>
+    </LayoutDefault>
   );
 };
 
-export default ForgotPassword;
+export default ResetPassword;
