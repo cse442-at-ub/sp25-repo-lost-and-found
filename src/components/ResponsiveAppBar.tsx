@@ -12,11 +12,13 @@ import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
+import { useNavigate } from 'react-router';
 
 const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'About Us', 'Settings', 'Admin Claim', 'Admin Match', 'Contact Us'];
 const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
 
 function ResponsiveAppBar() {
+  const navigate = useNavigate()
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
 
@@ -34,6 +36,15 @@ function ResponsiveAppBar() {
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
+
+  const redirectToPage = (page: string) => {
+    var pageName = page.toLowerCase()
+    pageName.replace(' ', '-')
+
+    if(pageName == "home") {
+      navigate("/")
+    }
+  }
 
   return (
     <AppBar position="static">
@@ -114,7 +125,7 @@ function ResponsiveAppBar() {
             {pages.map((page) => (
               <Button
                 key={page}
-                onClick={handleCloseNavMenu}
+                onClick={() => {redirectToPage(page)}}
                 sx={{ my: 2, color: 'white', display: 'block' }}
               >
                 {page}
