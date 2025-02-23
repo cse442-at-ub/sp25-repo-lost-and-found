@@ -13,6 +13,7 @@ import '@fontsource/roboto/700.css';
 import LayoutDefault from './LayoutDefault'
 import HomePage from './HomePage'
 import LoginPage from './LoginPage';
+import RegisterPage from './RegisterPage'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -23,6 +24,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/test" element={<TestRedirect />} />
       </Routes>
       </HashRouter>
