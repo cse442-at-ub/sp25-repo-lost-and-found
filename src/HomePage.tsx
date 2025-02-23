@@ -10,7 +10,7 @@ function HomePage() {
     <>
         <LayoutDefault>
                 <Box sx={{ display: 'flex', justifyContent: 'right', gap: '20px', margin: '20px' }}>
-                    <Button variant="contained">Login</Button>
+                    <Button variant="contained" onClick={() => navigate('/login')}>Login</Button>
                     <Button variant="contained">Register</Button>
                 </Box>
                 
