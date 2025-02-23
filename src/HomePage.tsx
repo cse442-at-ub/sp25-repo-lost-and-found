@@ -4,13 +4,16 @@ import { Box, Button, Card, CardActionArea, CardContent, CardMedia, Grid, Grid2,
 import ReportLostItem from '../public/report-lost-item.png'
 import ReportFoundItem from '../public/report-found-item.png'
 import ClaimItem from '../public/claim-item.png'
+import { useNavigate } from 'react-router'
 
-function HomePage() {
+function HomePage() {   
+    const navigate = useNavigate();
+
   return (
     <>
         <LayoutDefault>
                 <Box sx={{ display: 'flex', justifyContent: 'right', gap: '20px', margin: '20px' }}>
-                    <Button variant="contained">Login</Button>
+                    <Button variant="contained" onClick={() => navigate('/login')}>Login</Button>
                     <Button variant="contained">Register</Button>
                 </Box>
                 
@@ -75,7 +78,7 @@ function HomePage() {
                 </Grid>
 
                 <Grid2 container columns={{ xs: 4, sm: 8, md: 12 }} marginTop={'auto'} backgroundColor={'black'} padding={'15px'}>
-                    <Grid2 item size={4}>
+                    <Grid2 item size={4} color={"grey"}>
                         <Typography variant="h4" gutterBottom>
                         About
                         </Typography>
