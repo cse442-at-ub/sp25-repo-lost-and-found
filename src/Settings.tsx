@@ -86,15 +86,13 @@ const Settings = () => {
                     Security
                     </Typography>
 
-                    {/* Add Padding/Spacing Below Typography */}
                     <Box mb={3} />
 
-                    {/* Buttons */}
                     <Box display="flex" justifyContent="flex-start">
                     <Button 
                         variant="contained" 
                         sx={{marginLeft: 16 , backgroundColor: "green", color: "white", "&:hover": { backgroundColor: "darkgreen" } }} 
-                        onClick={changePassword}
+                        onClick={() => navigate('/reset-password')}
                     >
                         Change Password
                     </Button>
