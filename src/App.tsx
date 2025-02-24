@@ -13,6 +13,7 @@ import '@fontsource/roboto/700.css';
 import LayoutDefault from './LayoutDefault'
 import HomePage from './HomePage'
 import LoginPage from './LoginPage';
+import RegisterPage from './RegisterPage'
 import ForgotPassword from './ForgotPassword'
 import ResetPassword from './ResetPassword'
 
@@ -25,6 +26,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/test" element={<TestRedirect />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />

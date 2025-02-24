@@ -14,7 +14,7 @@ function HomePage() {
         <LayoutDefault>
                 <Box sx={{ display: 'flex', justifyContent: 'right', gap: '20px', margin: '20px' }}>
                     <Button variant="contained" onClick={() => navigate('/login')}>Login</Button>
-                    <Button variant="contained">Register</Button>
+                    <Button variant="contained" onClick={() => navigate('/register')}>Register</Button>
                 </Box>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
