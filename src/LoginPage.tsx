@@ -55,7 +55,7 @@ function LoginPage() {
 
                 {error && <Typography color="error">{error}</Typography>}
 
-                <Link href="./forgot-password" sx={{ marginBottom: '10px', cursor: 'pointer' }}>
+                <Link href="./#forgot-password" sx={{ marginBottom: '10px', cursor: 'pointer' }}>
                     Forgot Password?
                 </Link>
 
