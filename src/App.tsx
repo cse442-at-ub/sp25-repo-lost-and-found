@@ -12,9 +12,10 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import LayoutDefault from './LayoutDefault'
 import HomePage from './HomePage'
-import LoginPage from './LoginPage';
+import LoginPage from './LoginPage'
 import ForgotPassword from './ForgotPassword'
 import ResetPassword from './ResetPassword'
+import Settings from './Settings'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -28,6 +29,7 @@ function App() {
         <Route path="/test" element={<TestRedirect />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
       </HashRouter>
     </>
