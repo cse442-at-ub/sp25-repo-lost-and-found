@@ -1,20 +1,76 @@
-import React from 'react';
-import { Box, Button, TextField, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Button, Link, TextField, Typography } from '@mui/material';
 import LayoutDefault from './LayoutDefault';
 
 function LoginPage() {
-  return (
-    <>
-      <LayoutDefault>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px' }}>
-        <Typography variant="h4">Login</Typography>
-        <TextField label="Email" variant="outlined" sx={{ margin: '10px', width: '300px' }} />
-        <TextField label="Password" type="password" variant="outlined" sx={{ margin: '10px', width: '300px' }} />
-        <Button variant="contained" sx={{ marginTop: '10px' }}>Login</Button>
-      </Box>
-      </LayoutDefault>
-    </>
-  );
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+
+    const validateEmail = (email: string) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
+
+    const handleLogin = () => {
+        if (!email || !password) {
+            setError('Email and password are required.');
+            return;
+        }
+
+        if (!validateEmail(email)) {
+            setError('Invalid email format.');
+            return;
+        }
+
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters long.');
+            return;
+        }
+
+        setError('');
+        console.log('Login successful'); // Placeholder for backend integration
+    };
+
+    return (
+        <LayoutDefault>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px' }}>
+                <Typography variant="h4">Login</Typography>
+                
+                <TextField 
+                    label="Email" 
+                    variant="outlined" 
+                    sx={{ margin: '10px', width: '300px' }} 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                />
+
+                <TextField 
+                    label="Password" 
+                    type="password" 
+                    variant="outlined" 
+                    sx={{ margin: '10px', width: '300px' }} 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                />
+
+                {error && <Typography color="error">{error}</Typography>}
+
+                <Link href="./#forgot-password" sx={{ marginBottom: '10px', cursor: 'pointer' }}>
+                    Forgot Password?
+                </Link>
+
+                <Button 
+                    variant="contained" 
+                    sx={{ marginTop: '10px' }} 
+                    onClick={handleLogin} 
+                >
+                    Login
+                </Button>
+            </Box>
+        </LayoutDefault>
+    );
 }
 
 export default LoginPage;
+
+
