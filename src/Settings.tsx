@@ -1,6 +1,6 @@
 import { useState } from "react";
 import LayoutDefault from "./LayoutDefault";
-import { Container, Typography, Button, Switch, FormControlLabel, Box, Paper } from "@mui/material";
+import { Container, Typography, Button, Switch, FormControlLabel, Box } from "@mui/material";
 import { useNavigate } from 'react-router'
 
 const Settings = () => {
@@ -42,54 +42,86 @@ const Settings = () => {
 
     return (
         <LayoutDefault>
-        <Container maxWidth="sm">
-            <Paper elevation={3} sx={{ padding: 3, marginTop: 4 }}>
-            <Typography variant="h5" gutterBottom>
-                Settings
-            </Typography>
+            <Container sx={{ margin: 'auto', background: 'white', padding: 3, borderRadius: 2, boxShadow: 2 }}>
+                <Typography variant="h2" gutterBottom>
+                    Settings
+                </Typography>
 
-            {/* User Information Section */}
-            <Box mt={2}>
-                <Typography variant="h6">User Information</Typography>
-                {Object.entries(userInfo).map(([key, value]) => (
-                <Box key={key} mt={1} display="flex" alignItems="center">
-                    <Typography>{key.charAt(0).toUpperCase() + key.slice(1)}: {value}</Typography>
-                    <Button variant="outlined" size="small" sx={{ ml: 2 }} onClick={() => editField(key as keyof typeof userInfo)}>
-                    Edit
-                    </Button>
+                {/* User Information Section */}
+                <Box sx={{ borderTop: '1px solid #ddd', paddingBottom: 2, marginBottom: 2  }}>
+                    <Typography variant="h5">User Information</Typography>
+                    <Box sx={{ marginLeft: 16 }}>
+                    {Object.entries(userInfo).map(([key, value]) => (
+                    <Box key={key} mt={1} display="flex" alignItems="center">
+                        <Typography>
+                        {key.charAt(0).toUpperCase() + key.slice(1)}: <span className="info">{value}</span>
+                        </Typography>
+                        <Button variant="outlined" size="small" sx={{ ml: 2 , color: "white", backgroundColor: "dodgerBlue", "&:hover": { backgroundColor: "royalBlue" }}} onClick={() => editField(key)}>
+                        Edit
+                        </Button>
+                    </Box>
+                    ))}
+                    </Box>
                 </Box>
-                ))}
-            </Box>
 
-            {/* Preferences Section */}
-            <Box mt={3}>
-                <Typography variant="h6">Preferences</Typography>
-                {Object.entries(notifications).map(([key, value]) => (
-                <FormControlLabel
-                    key={key}
-                    control={<Switch checked={value} onChange={() => toggleNotification(key as keyof typeof notifications)} />}
-                    label={key.charAt(0).toUpperCase() + key.slice(1) + " Notifications"}
-                />
-                ))}
-            </Box>
+                {/* Preferences Section */}
+                <Box sx={{ borderTop: '1px solid #ddd', paddingBottom: 2, marginBottom: 2 }}>
+                    <Typography variant="h5">Preferences</Typography>
+                    <Box sx={{ marginLeft: 16 }}>
+                    {Object.entries(notifications).map(([key, value]) => (
+                    <Box key={key} display="flex" alignItems="center" mt={1} className="toggle-group">
+                        <FormControlLabel
+                        control={<Switch checked={value} onChange={() => toggleNotification(key)} />}
+                        label={key.toUpperCase() + " Notifications"}
+                        />
+                    </Box>
+                    ))}
+                    </Box>
+                </Box>
 
-            {/* Security Section */}
-            <Box mt={3}>
-                <Typography variant="h6">Security</Typography>
-                <Button variant="contained" color="primary" sx={{ mt: 1 }} onClick={() => navigate('/reset-password')}>
-                Change Password
-                </Button>
-            </Box>
+                {/* Security Section */}
+                <Box mt={3} sx={{ borderTop: '1px solid #ddd', paddingBottom: 2 }}>
+                    {/* Security Typography */}
+                    <Typography variant="h5" gutterBottom>
+                    Security
+                    </Typography>
 
-            {/* Danger Zone Section */}
-            <Box mt={3}>
-                <Typography variant="h6" color="error">Danger Zone</Typography>
-                <Button variant="contained" color="error" sx={{ mt: 1 }} onClick={deleteAccount}>
-                Delete Account
-                </Button>
-            </Box>
-            </Paper>
-        </Container>
+                    {/* Add Padding/Spacing Below Typography */}
+                    <Box mb={3} />
+
+                    {/* Buttons */}
+                    <Box display="flex" justifyContent="flex-start">
+                    <Button 
+                        variant="contained" 
+                        sx={{marginLeft: 16 , backgroundColor: "green", color: "white", "&:hover": { backgroundColor: "darkgreen" } }} 
+                        onClick={changePassword}
+                    >
+                        Change Password
+                    </Button>
+                    </Box>
+                </Box>
+
+                {/* Delect Account Section */}
+                <Box mt={3} sx={{ borderTop: '1px solid #ddd', paddingBottom: 2 }}>
+                    {/* Security Typography */}
+                    <Typography variant="h5" gutterBottom>
+                    Danger Zone
+                    </Typography>
+
+                    <Box mb={3} />
+
+                    {/* Buttons */}
+                    <Box display="flex" justifyContent="flex-start">
+                    <Button 
+                        variant="contained" 
+                        sx={{marginLeft: 16 , backgroundColor: "red", color: "white", "&:hover": { backgroundColor: "darkred" } }} 
+                        onClick={deleteAccount}
+                    >
+                        Delete Account
+                    </Button>
+                    </Box>
+                </Box>
+            </Container>
         </LayoutDefault>
     );
 };
