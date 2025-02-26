@@ -1,25 +1,48 @@
 <?php
-include 'db.php';
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: POST");
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+$servername = "localhost"; // or aptitude.cse.buffalo.edu for testing
+$username = "your_ubit_username";
+$password = "your_8_digit_person_number";
+$database = "cse442_2025_spring_team_s_db";
 
-    $sql = "SELECT password FROM users WHERE email = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $stmt->store_result();
-    $stmt->bind_result($hashed_password);
-    $stmt->fetch();
+// Create a connection
+$conn = new mysqli($servername, $username, $password, $database);
 
-    if ($stmt->num_rows > 0 && password_verify($password, $hashed_password)) {
-        echo "Login successful!";
-    } else {
-        echo "Invalid credentials!";
-    }
-
-    $stmt->close();
-    $conn->close();
+// Check connection
+if ($conn->connect_error) {
+    die(json_encode(["success" => false, "message" => "Connection failed"]));
 }
+
+// Read JSON input
+$data = json_decode(file_get_contents("php://input"));
+
+// Validate email and password
+if (!isset($data->email) || !isset($data->password)) {
+    die(json_encode(["success" => false, "message" => "Email and password required"]));
+}
+
+$email = $conn->real_escape_string($data->email);
+$password = $conn->real_escape_string($data->password);
+
+// Query the database
+$sql = "SELECT * FROM users WHERE email='$email'";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    $user = $result->fetch_assoc();
+    
+    // Verify password (assuming passwords are hashed)
+    if (password_verify($password, $user['password'])) {
+        echo json_encode(["success" => true, "message" => "Login successful"]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Invalid credentials"]);
+    }
+} else {
+    echo json_encode(["success" => false, "message" => "User not found"]);
+}
+
+$conn->close();
 ?>
