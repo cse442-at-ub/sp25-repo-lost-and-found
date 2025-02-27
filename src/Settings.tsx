@@ -1,6 +1,6 @@
 import { useState } from "react";
 import LayoutDefault from "./LayoutDefault";
-import { Container, Typography, Button, Switch, FormControlLabel, Box, Snackbar, Alert, Dialog, DialogActions, DialogContent, DialogTitle, TextField  } from "@mui/material";
+import { Container, Typography, Button, Switch, FormControlLabel, Box, Snackbar, Alert, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
 import { useNavigate } from 'react-router'
 
 const Settings = () => {
@@ -8,103 +8,146 @@ const Settings = () => {
     
     // Load user info from local storage or set defaults
     const getLocalStorageItem = <T,>(key: string, defaultValue: T): T => {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+      };
+    
+      // Usage:
+      const [userInfo, setUserInfo] = useState(() => getLocalStorageItem("userInfo", {
+          firstName: "Jane",
+          lastName: "Doe",
+          email: "janedoe@example.com",
+          phone: "(387) 873-2455",
+      }));
+      
+      const [notifications, setNotifications] = useState(() => getLocalStorageItem("notifications", {
+          email: false,
+          sms: false,
+          push: false,
+      }));
+      
+  
+      // State for Snackbar feedback
+      const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        severity: "error" | "warning" | "info" | "success";
+        message: string;
+      }>({
+          open: false,
+          severity: "info",
+          message: "",
+      });
+  
+      //State for handling dialog input
+      const [openDialog, setOpenDialog] = useState(false);
+      const [editFieldKey, setEditFieldKey] = useState<string | null>(null);
+      const [editFieldValue, setEditFieldValue] = useState<string>("");
+      const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  
+      useEffect(() => {
+          localStorage.setItem("userInfo", JSON.stringify(userInfo));
+      }, [userInfo]);
+  
+      useEffect(() => {
+          localStorage.setItem("notifications", JSON.stringify(notifications));
+      }, [notifications]);
+  
+      // Open the dialog instead of using prompt
+      const handleOpenDialog = (field: string) => {
+        setEditFieldKey(field);
+        setEditFieldValue(userInfo[field]); // Load existing value
+        setOpenDialog(true);
     };
   
-    // Usage:
-    const [userInfo, setUserInfo] = useState(() => getLocalStorageItem("userInfo", {
-        firstName: "Jane",
-        lastName: "Doe",
-        email: "janedoe@example.com",
-        phone: "(387) 873-2455",
-    }));
-    
-    const [notifications, setNotifications] = useState(() => getLocalStorageItem("notifications", {
-        email: false,
-        sms: false,
-        push: false,
-    }));
-    
-
-    // State for Snackbar feedback
-    const [snackbar, setSnackbar] = useState<{
-      open: boolean;
-      severity: "error" | "warning" | "info" | "success";
-      message: string;
-    }>({
-        open: false,
-        severity: "info",
-        message: "",
-    });
-
-    //State for handling dialog input
-    const [openDialog, setOpenDialog] = useState(false);
-    const [editFieldKey, setEditFieldKey] = useState<string | null>(null);
-    const [editFieldValue, setEditFieldValue] = useState<string>("");
-    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-
-    useEffect(() => {
-        localStorage.setItem("userInfo", JSON.stringify(userInfo));
-    }, [userInfo]);
-
-    useEffect(() => {
-        localStorage.setItem("notifications", JSON.stringify(notifications));
-    }, [notifications]);
-
-    // Open the dialog instead of using prompt
-    const handleOpenDialog = (field: string) => {
-      setEditFieldKey(field);
-      setEditFieldValue(userInfo[field]); // Load existing value
-      setOpenDialog(true);
-  };
-
     // Handle input change
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setEditFieldValue(event.target.value);
+        setEditFieldValue(event.target.value);
     };
-
-    // Save changes & validate inside the dialog
-     const handleSave = () => {
-      if (!editFieldKey) return;
-
-      if (editFieldKey === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFieldValue)) {
-          setSnackbar({ open: true, message: "Invalid email format", severity: "error" });
-          return;
-      }
-
-      if (editFieldKey === "phone" && !/^\(\d{3}\) \d{3}-\d{4}$/.test(editFieldValue)) {
-          setSnackbar({ open: true, message: "Invalid phone format. Use (XXX) XXX-XXXX", severity: "error" });
-          return;
-      }
-
-      setUserInfo((prev) => ({ ...prev, [editFieldKey]: editFieldValue }));
-      setSnackbar({ open: true, message: `${editFieldKey} updated successfully!`, severity: "success" });
-
-      setOpenDialog(false); // Close the dialog
-     };
-
-
-    const toggleNotification = (type: string) => {
-      setNotifications((prev) => ({ ...prev, [type]: !prev[type] }));
-      setSnackbar({ open: true, message: `${type.toUpperCase()} notifications ${notifications[type] ? 'disabled' : 'enabled'}`, severity: "info" });
+  
+      // Save changes & validate inside the dialog
+      const handleSaveToDB = async (updatedUserInfo: typeof userInfo) => {
+          try {
+              const response = await fetch("http://localhost/php/settings.php", {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                      type: "userInfo",
+                      data: updatedUserInfo,
+                  }),
+              });
+  
+              const data = await response.json();
+              console.log(data);
+  
+              if (data.success) {
+                  setSnackbar({ open: true, message: "Settings saved successfully!", severity: "success" });
+                  return true;
+              } else {
+                  setSnackbar({ open: true, message: `Failed to save settings: ${data.message}`, severity: "error" });
+                  return false;
+              }
+          } catch (error) {
+              console.error("Error saving settings:", error);
+              setSnackbar({ open: true, message: "An error occurred while saving settings.", severity: "error" });
+              return false;
+          }
+      };
+  
+      const handleSave = async () => {
+          if (!editFieldKey) return;
+  
+          if (editFieldKey === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFieldValue)) {
+              setSnackbar({ open: true, message: "Invalid email format", severity: "error" });
+              return;
+          }
+  
+          if (editFieldKey === "phone" && !/^\(\d{3}\) \d{3}-\d{4}$/.test(editFieldValue)) {
+              setSnackbar({ open: true, message: "Invalid phone format. Use (XXX) XXX-XXXX", severity: "error" });
+              return;
+          }
+  
+          const updatedUserInfo = { ...userInfo, [editFieldKey]: editFieldValue };
+  
+          // Try to save to DB first
+          const saveSuccessful = await handleSaveToDB(updatedUserInfo);
+  
+          if (saveSuccessful) {
+              setUserInfo(updatedUserInfo);
+              setSnackbar({ open: true, message: `${editFieldKey} updated successfully!`, severity: "success" });
+          }
+  
+          setOpenDialog(false); // Close the dialog
+      };
+  
+  
+  
+      const toggleNotification = (type: string) => {
+        setNotifications((prev) => ({ ...prev, [type]: !prev[type] }));
+        setSnackbar({ open: true, message: `${type.toUpperCase()} notifications ${notifications[type] ? 'disabled' : 'enabled'}`, severity: "info" });
     };
-
-     // Open the confirmation dialog
-     const deleteOpenDialog = () => {
-      setOpenDeleteDialog(true);
-    };
-
-    // Close the confirmation dialog
-    const deleteCloseDialog = () => {
-        setOpenDeleteDialog(false);
-    };
-
-    // Handle account deletion
-    const handleConfirmDelete = () => {
-        setSnackbar({ open: true, message: "Account deletion request sent.", severity: "warning" });
-        setOpenDeleteDialog(false);
-    };
+  
+      const pwdRedirect = () => {
+          window.location.href = 'https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/#/reset-password'; // Replace with your URL
+      };
+  
+       // Open the confirmation dialog
+       const deleteOpenDialog = () => {
+        setOpenDeleteDialog(true);
+      };
+  
+      // Close the confirmation dialog
+      const deleteCloseDialog = () => {
+          setOpenDeleteDialog(false);
+      };
+  
+      // Handle account deletion
+      const handleConfirmDelete = () => {
+          setSnackbar({ open: true, message: "Account deletion request sent.", severity: "warning" });
+          setOpenDeleteDialog(false);
+      };
+      
 
     return (
         <LayoutDefault>
@@ -113,9 +156,11 @@ const Settings = () => {
                     Settings
                 </Typography>
 
-                {/*User Information Section */}
+                {/* 🔵 User Information Section */}
                 <Box sx={{ borderTop: '1px solid #ddd', paddingBottom: 2, marginBottom: 2  }}>
-                    <Typography variant="h5">User Information</Typography>
+                    <Typography variant="h5">
+                        User Information
+                        </Typography>
                     <Box sx={{ marginLeft: 16 }}>
                     {Object.entries(userInfo).map(([key, value]) => (
                         <Box key={key} mt={1} display="flex" alignItems="center">
@@ -130,7 +175,7 @@ const Settings = () => {
                     </Box>
                 </Box>
 
-                {/*Notifications */}
+                {/* Notifications */}
                 <Box sx={{ borderTop: '1px solid #ddd', paddingBottom: 2, marginBottom: 2 }}>
                     <Typography variant="h5">Preferences</Typography>
                     <Box sx={{ marginLeft: 16 }}>
@@ -145,12 +190,12 @@ const Settings = () => {
                     </Box>
                 </Box>
 
-                {/*Snackbar */}
+                {/* Snackbar */}
                 <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
                     <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
                 </Snackbar>
 
-                {/*Dialog for Editing User Info */}
+                {/* Dialog for Editing User Info */}
                 <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
                     <DialogTitle>Edit {editFieldKey}</DialogTitle>
                     <DialogContent>
@@ -179,7 +224,7 @@ const Settings = () => {
                     <Typography variant="h5" gutterBottom>Security</Typography>
                     <Box display="flex" justifyContent="flex-start">
 
-                        <Button variant="contained" sx={{ marginLeft: 16 , backgroundColor: "green", color: "white" }} onClick={() => navigate('/reset-password')}>  
+                        <Button variant="contained" sx={{ marginLeft: 16 , backgroundColor: "green", color: "white" }} onClick={() => navigate('/reset-password')}>   {/* onClick={() => navigate('/reset-password')}  */}
                             Change Password
                         </Button>
                     </Box>
