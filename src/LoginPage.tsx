@@ -11,7 +11,7 @@ function LoginPage() {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     };
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         if (!email || !password) {
             setError('Email and password are required.');
             return;
@@ -27,8 +27,22 @@ function LoginPage() {
             return;
         }
 
-        setError('');
-        console.log('Login successful'); // Placeholder for backend integration
+        try {
+            const response = await fetch("https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/login.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+    
+            const data = await response.json();
+            if (data.success) {
+                console.log("Login successful");
+            } else {
+                setError(data.message);
+            }
+        } catch (error) {
+            setError("Server error. Please try again.");
+        }
     };
 
     return (
