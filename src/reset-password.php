@@ -1,9 +1,9 @@
 <?php
 
-$servername = "db";
-$username = "myuser";
-$password = "mypassword";
-$dbname = "mydb";
+$servername = "localhost";
+$username = "jxboulwa";
+$password = "50456062";
+$dbname = "cse442_2025_spring_team_s_db";
 
 function hashPassword($password) {
     return password_hash($password, PASSWORD_BCRYPT);
