@@ -28,7 +28,7 @@ function LoginPage() {
         }
 
         try {
-            const response = await fetch("https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/login.php", {
+            const response = await fetch("https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/backend/login.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
@@ -37,6 +37,7 @@ function LoginPage() {
             const data = await response.json();
             if (data.success) {
                 console.log("Login successful");
+                window.location.href = "/homepage";
             } else {
                 setError(data.message);
             }
