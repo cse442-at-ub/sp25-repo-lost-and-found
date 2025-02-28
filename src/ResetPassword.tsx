@@ -26,7 +26,7 @@ const ResetPassword = (e: any) => {
     event.preventDefault();
 
     try {
-      const response = await fetch('/your-backend-endpoint.php', {
+      const response = await fetch('/resetpassword.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
