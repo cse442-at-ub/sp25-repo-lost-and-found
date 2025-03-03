@@ -12,7 +12,7 @@ const ForgotPassword = (e: any) => {
     event.preventDefault();
 
     try {
-      const response = await fetch('../../backend/src/sendOtp.php', {
+      const response = await fetch('./backend/src/sendOtp.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
