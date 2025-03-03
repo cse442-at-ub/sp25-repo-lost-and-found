@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { Checkbox, List, ListItem, Button, TextField, Box, Container, Card, CardContent } from "@mui/material";
+import { Checkbox, List, ListItem, Button, TextField, Box, Container, Card, CardContent, Typography } from "@mui/material";
 import LayoutDefault from "./LayoutDefault";
+import { useLocation } from "react-router";
 
 const ResetPassword = (e: any) => {
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state.email);
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [resp, setResp] = useState({okay: false, msg: null});
   const passwdRules = [
     {text: "The length of the password is at least 8",
      cond: (s: string) => s.length >= 8},
@@ -26,7 +29,7 @@ const ResetPassword = (e: any) => {
     event.preventDefault();
 
     try {
-      const response = await fetch('/resetpassword.php', {
+      const response = await fetch('../../julia/backend/src/resetPassword.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,22 +37,14 @@ const ResetPassword = (e: any) => {
         body: JSON.stringify({
           email: email,
           otp: otp,
-          password: password,
+          password: password
         }),
       });
-
-      if (response.ok) {
-        // Handle successful password reset
-        console.log('Password reset successful');
-        // Optionally redirect or show a success message
-      } else {
-        // Handle error response
-        console.error('Password reset failed:', response.statusText);
-        // Optionally show an error message to the user
-      }
+      const j = await response.json();
+      console.log(j);
+      setResp(j);
     } catch (error) {
-      console.error('Error during password reset:', error);
-      // Optionally show an error message to the user
+      console.error('Error during email query:', error);
     }
   };
 
@@ -62,11 +57,12 @@ const ResetPassword = (e: any) => {
           <CardContent>
             <Box component="form" onSubmit={handleSubmit} sx={{m: 3}}>
               <TextField fullWidth required id="email" label="Email Address"
-                  name="email" autoComplete="email" autoFocus
+                  name="email" autoComplete="email"
+                  defaultValue={email}
                   onChange={(e) => {setEmail(e.target.value);}}
                   sx={{m: 1}}/>
               <TextField fullWidth required id="otp" label="OTP Token"
-                  name="otp" autoComplete="otp"
+                  name="otp" autoComplete="otp" autoFocus
                   onChange={(e) => {setOtp(e.target.value);}}
                   error={ ! /\d{6}/.test(otp) }
                   helperText="OTP token is 6 digits"
@@ -90,6 +86,7 @@ const ResetPassword = (e: any) => {
                   onChange={(e) => {setConfirm(e.target.value);}}
                   error={confirm !== password}
                   sx={{m: 1}}/>
+              <Typography hidden={resp.msg===null} sx={{color: resp.okay?"#000000":"#cc0000"}}>{resp.msg || ""}</Typography>
               <Button fullWidth variant="contained" type="submit"
                   disabled={!passwdRules.every((rule) => rule.cond(password)) || confirm !== password || ! /\d{6}/.test(otp)}
                   sx={{m: 1}}>Set Password</Button>
