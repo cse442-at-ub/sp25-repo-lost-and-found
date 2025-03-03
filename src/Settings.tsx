@@ -1,4 +1,4 @@
-import { useState,  useEffect, useCallback } from "react";
+import { useState,  useEffect } from "react";
 import LayoutDefault from "./LayoutDefault";
 import { Container, Typography, Button, Switch, FormControlLabel, Box, Snackbar, Alert, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
 import { useNavigate } from 'react-router'
@@ -33,55 +33,51 @@ const Settings = () => {
       });
 
     // Function to fetch user data from backend
-    const fetchUserData = useCallback(async () => {
+    const fetchUserData = async () => {
         try {
-            const userId = 1; // Replace with the actual user ID from authentication
-            console.log("Fetching data from:", `https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/backend/settings.php?user_id=${userId}`);
+            console.log("Fetching user data...");
+            
+            const response = await fetch("https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/shanoyah/Backend/settings.php");
+            const data = await response.json();
     
-            const response = await fetch(`https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/backend/settings.php?user_id=${userId}`);
-            console.log("Response status:", response.status);
+            console.log("Received data:", data);
     
-            const text = await response.text();
-            console.log("Response text:", text);
-    
-            const data = JSON.parse(text);
-            console.log("Parsed JSON:", data);
-    
-            // Redirect inactive users
-            if (data.user_info?.is_deleted) {
-                setSnackbar({ open: true, severity: "error", message: "Account not Found. Redirecting to login." });
-                setTimeout(() => {
-                    navigate('/login');
-                }, 3000);
-
+            if (data.error) {
+                setSnackbar({ open: true, severity: "error", message: data.error });
                 return;
             }
     
-            if (data.user_info) {
-                setUserInfo({
-                    firstName: data.user_info.first_name || "",
-                    lastName: data.user_info.last_name || "",
-                    email: data.user_info.email || "",
-                    phone: data.user_info.phone_number || "",
-                });
-            }
+            // Set user info state
+            setUserInfo({
+                firstName: data.user_info.first_name || "",
+                lastName: data.user_info.last_name || "",
+                email: data.user_info.email || "",
+                phone: data.user_info.phone_number || "",
+            });
     
-            if (data.notifications) {
-                setNotifications({
-                    email: Boolean(data.notifications.email_notif),
-                    sms: Boolean(data.notifications.sms_notif),
-                    push: Boolean(data.notifications.push_notif),
-                });
-            }
+            // Set notification preferences state
+            setNotifications({
+                email: Boolean(data.notifications.email_notif),
+                sms: Boolean(data.notifications.sms_notif),
+                push: Boolean(data.notifications.push_notif),
+            });
+    
         } catch (error) {
             console.error("Error fetching user data:", error);
             setSnackbar({ open: true, severity: "error", message: "Failed to load user data" });
         }
-    }, []); // ✅ Empty dependency array ensures it's only created once
+    };
+    
+    // Fetch data when component mounts
+    useEffect(() => {
+        fetchUserData();
+    }, []);
+    
+    
     
     useEffect(() => {
         fetchUserData();
-    }, [fetchUserData]); // ✅ Call the function when the component mounts
+    }, []); // Call the function when the component mounts
     
 
     
@@ -115,21 +111,25 @@ const Settings = () => {
     // Save changes & validate inside the dialog
     const handleSaveToDB = async (updatedData: any, type: "userInfo" | "notifications") => {
         try {
-            const userId = 1; // Replace with the actual logged-in user ID
+            console.log("Saving data to backend:", JSON.stringify({ data: updatedData, type }));
     
-            console.log("Saving data to:", `https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/backend/settings.php?user_id=${userId}`);
-            console.log("Sending data:", JSON.stringify({ data: updatedData, type }));
-    
-            const response = await fetch(`https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/backend/settings.php?user_id=${userId}`, {
+            const response = await fetch("https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/shanoyah/Backend/settings.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: updatedData, type }),
+                body: JSON.stringify({ data: updatedData, type }), // No user_id sent
             });
     
             console.log("Response status:", response.status);
     
-            const text = await response.text();
-            console.log("Raw response text:", text);
+            let text = await response.text();
+            try {
+                const data = JSON.parse(text);
+                console.log("Parsed JSON:", data);
+            } catch (error) {
+                console.error("Invalid JSON:", text);
+                throw new Error("Server returned an invalid response");
+            }
+
     
             if (!text.startsWith("{") && !text.startsWith("[")) {
                 throw new Error("Invalid JSON response: " + text);
@@ -151,6 +151,7 @@ const Settings = () => {
             return false;
         }
     };
+    
     
     
     
@@ -213,7 +214,7 @@ const Settings = () => {
             const userId = 1; // Replace with actual logged-in user ID
             console.log("Sending account deletion request for user:", userId);
     
-            const response = await fetch(`https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/backend/settings.php`, {
+            const response = await fetch(`https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/shanoyah/Backend/settings.php`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user_id: userId, confirm: true }), // Required for deletion
