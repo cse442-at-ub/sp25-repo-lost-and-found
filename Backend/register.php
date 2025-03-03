@@ -8,11 +8,14 @@ $dbname = "cse442_2025_spring_team_s_db";
 $username = "addisony";
 $password = "50399660";
 
-$conn = new mysqli($host, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die(json_encode(["status" => "error", "message" => "Database connection failed"]));
+try {
+    $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    echo json_encode(["error" => "Database connection failed: " . $e->getMessage()]);
+    exit;
 }
+
 
 // Get JSON input from the frontend
 $data = json_decode(file_get_contents("php://input"), true);
