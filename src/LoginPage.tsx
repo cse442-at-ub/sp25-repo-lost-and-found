@@ -35,7 +35,7 @@ function LoginPage() {
         }
 
         try {
-            const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/dinal/Backend/login.php", {
+            const response = await fetch('../../Backend/login.php', {
             //const response = await fetch("http://localhost:5173/CSE442/2025-Spring/cse-442s/backend/login.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -48,7 +48,7 @@ function LoginPage() {
 
             if (response.ok && data.success) {
                 console.log("Redirecting to the homepage...");
-                window.location.href = "/CSE442/2025-Spring/cse-442s/dinal/dist/";
+                window.location.href = "/CSE442/2025-Spring/cse-442s/";
             } else {
                 setError(data.message || "Invalid credentials.");
             }
