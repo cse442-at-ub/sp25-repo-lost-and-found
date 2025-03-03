@@ -70,8 +70,15 @@ function handleGetRequest($conn, $userId) {
         $userResult = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$userResult) {
-            echo json_encode(["error" => "No user found with user_id = $userId"]);
+            echo json_encode(["error" => "No user found"]);
             return;
+        }
+
+        // If user is deleted, end session and force logout
+        if ($userResult['is_deleted'] == 1) {
+            echo json_encode(["error" => "Account deleted. Redirecting ..."]);
+            http_response_code(403); // Forbidden
+            exit();
         }
 
         // Fetch notification settings
@@ -79,17 +86,13 @@ function handleGetRequest($conn, $userId) {
         $stmt->execute([':userId' => $userId]);
         $notifications = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$notifications) {
-            echo json_encode(["error" => "No notification settings found for user_id = $userId"]);
-            return;
-        }
-
         echo json_encode(["user_info" => $userResult, "notifications" => $notifications]);
     } catch (PDOException $e) {
         echo json_encode(["error" => "Database error: " . $e->getMessage()]);
         http_response_code(500);
     }
 }
+
 
 
 // Function to Update User Info or Notifications
