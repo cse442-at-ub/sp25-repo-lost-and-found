@@ -35,19 +35,27 @@ const Settings = () => {
     // Function to fetch user data from backend
     const fetchUserData = async () => {
         try {
-            console.log("Fetching user data...");
-            
             const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/shanoyah/Backend/settings.php");
+    
             const data = await response.json();
     
-            console.log("Received data:", data);
-    
             if (data.error) {
-                setSnackbar({ open: true, severity: "error", message: data.error });
+    
+                // If user is deleted, redirect to login
+                if (response.status === 403) {
+                    setSnackbar({
+                        open: true,
+                        message: "Your account has been deleted. Redirecting to login...",
+                        severity: "warning",
+                    });
+                    localStorage.clear(); // Clear stored user data
+                    navigate('/login'); // Redirect to login page
+                    return;
+                }
+    
                 return;
             }
     
-            // Set user info state
             setUserInfo({
                 firstName: data.user_info.first_name || "",
                 lastName: data.user_info.last_name || "",
@@ -55,7 +63,6 @@ const Settings = () => {
                 phone: data.user_info.phone_number || "",
             });
     
-            // Set notification preferences state
             setNotifications({
                 email: Boolean(data.notifications.email_notif),
                 sms: Boolean(data.notifications.sms_notif),
@@ -64,9 +71,9 @@ const Settings = () => {
     
         } catch (error) {
             console.error("Error fetching user data:", error);
-            setSnackbar({ open: true, severity: "error", message: "Failed to load user data" });
         }
     };
+    
     
     // Fetch data when component mounts
     useEffect(() => {
