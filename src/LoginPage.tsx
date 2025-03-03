@@ -35,7 +35,7 @@ function LoginPage() {
         }
 
         try {
-            const response = await fetch('../../Backend/login.php', {
+            const response = await fetch('./Backend/login.php', {
             //const response = await fetch("http://localhost:5173/CSE442/2025-Spring/cse-442s/backend/login.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

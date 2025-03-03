@@ -28,7 +28,14 @@ try {
             $stmt->execute([$email]);
             $hashedPassword = $stmt->fetchColumn();
 
+            // Prepare and execute the SQL query
+            $stmt2 = $pdo->prepare("SELECT user_id FROM users WHERE email = ?");
+            $stmt2->execute([$email]);
+            $user_id = $stmt2->fetchColumn();
+
             if ($hashedPassword && password_verify($password, $hashedPassword)) {
+                session_start();
+                $_SESSION["user_id"] = $user_id;
                 echo json_encode(["success" => true, "message" => "Login successful"]);
             } else {
                 echo json_encode(["success" => false, "message" => "Invalid email or password"]);
