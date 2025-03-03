@@ -29,7 +29,7 @@ const ResetPassword = (e: any) => {
     event.preventDefault();
 
     try {
-      const response = await fetch('../../julia/backend/src/resetPassword.php', {
+      const response = await fetch('../../backend/src/resetPassword.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
