@@ -32,7 +32,7 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
-    echo json_encode(["user_id" => $userid, "name" => $row['first_name']]);
+    echo json_encode(["user_id" => $userid, "first_name" => $row['first_name']]);
 } else {
     echo json_encode(["error" => "User not found"]);
 }
