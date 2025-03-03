@@ -35,7 +35,7 @@ const Settings = () => {
     // Function to fetch user data from backend
     const fetchUserData = async () => {
         try {
-            const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/shanoyah/Backend/settings.php");
+            const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/settings.php");
     
             const data = await response.json();
     
@@ -120,7 +120,7 @@ const Settings = () => {
         try {
             console.log("Saving data to backend:", JSON.stringify({ data: updatedData, type }));
     
-            const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/shanoyah/Backend/settings.php", {
+            const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/settings.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ data: updatedData, type }), // No user_id sent
@@ -221,7 +221,7 @@ const Settings = () => {
             const userId = 1; // Replace with actual logged-in user ID
             console.log("Sending account deletion request for user:", userId);
     
-            const response = await fetch(`https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/shanoyah/Backend/settings.php`, {
+            const response = await fetch(`https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/settings.php`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user_id: userId, confirm: true }), // Required for deletion
