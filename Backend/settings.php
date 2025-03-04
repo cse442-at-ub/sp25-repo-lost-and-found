@@ -32,10 +32,10 @@ try {
 
 // Ensure user is logged in before processing any request
 if (!isset($_SESSION["user_id"])) {
-    //$_SESSION["user_id"] = 1; // testing
-    ////echo json_encode(["error" => "Unauthorized"]);
-    //http_response_code(401);
-    //exit;
+
+    echo json_encode(["error" => "Unauthorized"]);
+    http_response_code(401);
+    exit;
 }
 
 $userId = $_SESSION["user_id"]; //  Retrieve from session
