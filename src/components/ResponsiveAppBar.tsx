@@ -15,7 +15,6 @@ import AdbIcon from '@mui/icons-material/Adb';
 import { useNavigate } from 'react-router';
 
 const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'About Us', 'Settings', 'Admin Claim', 'Admin Match', 'Contact Us'];
-const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
 
 function ResponsiveAppBar() {
   const navigate = useNavigate()
@@ -39,11 +38,22 @@ function ResponsiveAppBar() {
 
   const redirectToPage = (page: string) => {
     var pageName = page.toLowerCase()
-    pageName.replace(' ', '-')
+    //@ts-ignore
+    pageName = pageName.replaceAll(' ', '-')
 
     if(pageName == "home") {
       navigate("/")
+      return
     }
+
+    console.log(pageName)
+
+    navigate("/" + pageName)
+  }
+
+  const Logout = () => {
+    document.cookie.split(";").forEach(function(c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); });
+    handleCloseUserMenu()
   }
 
   return (
@@ -154,11 +164,9 @@ function ResponsiveAppBar() {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
             >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
-                </MenuItem>
-              ))}
+              <MenuItem onClick={Logout}>
+                <Typography sx={{ textAlign: 'center' }} onClick={Logout}>Logout</Typography>
+              </MenuItem>
             </Menu>
           </Box>
         </Toolbar>
