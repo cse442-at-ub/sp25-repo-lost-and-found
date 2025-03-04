@@ -53,7 +53,7 @@ try {
 
     $stmt = $pdo->prepare('SELECT id, token FROM otp_tokens
         WHERE email = :email and used = FALSE
-        and created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)');
+        and created_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)');
     $stmt->bindValue(':email', $email, PDO::PARAM_STR);
     $stmt->execute();
 
