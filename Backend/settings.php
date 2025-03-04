@@ -11,20 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
+
+
+session_start();
 header("Content-Type: application/json");
-
-// Fetch user_id from userinfo.php
-$userInfoResponse = file_get_contents("https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/shanoyah/Backend/userinfo.php");
-$userInfoData = json_decode($userInfoResponse, true);
-
-// Check if user_id exists
-if (!isset($userInfoData["user_id"])) {
-    echo json_encode(["error" => "Unauthorized - No active session"]);
-    http_response_code(401);
-    exit();
-}
-
-$userId = $userInfoData["user_id"]; // Retrieve from API response
 
 // Database Connection
 $host = "localhost";
@@ -42,7 +32,7 @@ try {
 
 // Ensure user is logged in before processing any request
 if (!isset($_SESSION["user_id"])) {
-    $_SESSION["user_id"] = 1; // testing
+    //$_SESSION["user_id"] = 1; // testing
     ////echo json_encode(["error" => "Unauthorized"]);
     //http_response_code(401);
     //exit;
