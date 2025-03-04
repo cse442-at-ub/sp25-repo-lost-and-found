@@ -52,6 +52,7 @@ const Settings = () => {
                     navigate('/login'); // Redirect to login page
                     return;
                 }
+                /*
                 //check is session is active and users is authorized
                 if(response.status === 401){
                     setSnackbar({
@@ -62,6 +63,7 @@ const Settings = () => {
                     localStorage.clear(); // Clear stored user data
                     navigate('/login'); // Redirect to login page
                 }
+                */
     
                 return;
             }
@@ -334,7 +336,7 @@ const Settings = () => {
                     <Typography variant="h5" gutterBottom>Security</Typography>
                     <Box display="flex" justifyContent="flex-start">
 
-                        <Button variant="contained" sx={{ marginLeft: 16 , backgroundColor: "green", color: "white" }} onClick={() => navigate('/reset-password')} >   {/* onClick={() => navigate('/reset-password')}  */}
+                        <Button variant="contained" sx={{ marginLeft: 16 , backgroundColor: "green", color: "white" }} onClick={() => navigate('/change-password')} >   {/* onClick={() => navigate('/reset-password')}  */}
                             Change Password
                         </Button>
                     </Box>
