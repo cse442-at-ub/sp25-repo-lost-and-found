@@ -334,7 +334,7 @@ const Settings = () => {
                     <Typography variant="h5" gutterBottom>Security</Typography>
                     <Box display="flex" justifyContent="flex-start">
 
-                        <Button variant="contained" sx={{ marginLeft: 16 , backgroundColor: "green", color: "white" }} onClick={() => navigate('/reset-password')} >   {/* onClick={() => navigate('/reset-password')}  */}
+                        <Button variant="contained" sx={{ marginLeft: 16 , backgroundColor: "green", color: "white" }} onClick={() => navigate('/change-password')} >   {/* onClick={() => navigate('/reset-password')}  */}
                             Change Password
                         </Button>
                     </Box>
