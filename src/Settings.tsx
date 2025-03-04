@@ -171,7 +171,7 @@ const Settings = () => {
             return;
         }
     
-        if (editFieldKey === "phone" && !/^\(\d{3}\) \d{3}-\d{4}$/.test(editFieldValue)) {
+        if (editFieldKey === "phone" && editFieldValue !== "" && !/^\(\d{3}\) \d{3}-\d{4}$/.test(editFieldValue)) {
             setSnackbar({ open: true, message: "Invalid phone format. Use (XXX) XXX-XXXX", severity: "error" });
             return;
         }
