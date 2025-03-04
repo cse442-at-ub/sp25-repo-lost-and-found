@@ -56,6 +56,7 @@ function ResponsiveAppBar() {
   const Logout = () => {
     deleteAllCookies()
     handleCloseUserMenu()
+    window.location.reload();
   }
 
   return (
