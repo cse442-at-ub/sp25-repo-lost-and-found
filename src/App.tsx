@@ -17,6 +17,7 @@ import RegisterPage from './RegisterPage'
 import ForgotPassword from './ForgotPassword'
 import ResetPassword from './ResetPassword'
 import Settings from './Settings'
+import ChangePassword from './ChangePassword'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -32,6 +33,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/change-password" element={<ChangePassword />} />
       </Routes>
       </HashRouter>
     </>
