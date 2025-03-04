@@ -52,6 +52,16 @@ const Settings = () => {
                     navigate('/login'); // Redirect to login page
                     return;
                 }
+
+                if(response.status === 401){
+                    setSnackbar({
+                        open: true,
+                        message: "You are not authorized to view this page. Redirecting to login...",
+                        severity: "warning",
+                    });
+                    localStorage.clear(); // Clear stored user data
+                    navigate('/login'); // Redirect to login page
+                }
     
                 return;
             }
