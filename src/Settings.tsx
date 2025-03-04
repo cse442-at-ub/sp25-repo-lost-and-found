@@ -52,7 +52,8 @@ const Settings = () => {
                     navigate('/login'); // Redirect to login page
                     return;
                 }
-
+                /*
+                //check is session is active and users is authorized
                 if(response.status === 401){
                     setSnackbar({
                         open: true,
@@ -62,6 +63,7 @@ const Settings = () => {
                     localStorage.clear(); // Clear stored user data
                     navigate('/login'); // Redirect to login page
                 }
+                */
     
                 return;
             }
