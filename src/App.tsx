@@ -18,6 +18,7 @@ import ForgotPassword from './ForgotPassword'
 import ResetPassword from './ResetPassword'
 import Settings from './Settings'
 import ChangePassword from './ChangePassword'
+import AboutUs from './AboutUs'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -34,6 +35,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/about-us" element={<AboutUs />} />
       </Routes>
       </HashRouter>
     </>
