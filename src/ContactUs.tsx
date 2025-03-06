@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router'
 function ContactUs() {   
     const [form, setForm] = useState({ username: "", name: "", email: "", message: "" });
   const [errors, setErrors] = useState({});
+  const [messageSendSuccess, setMessageSendSuccess] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -22,6 +23,8 @@ function ContactUs() {
     e.preventDefault();
     let newErrors = {};
     
+    setMessageSendSuccess(false)
+
     Object.keys(form).forEach((key) => {
       if (!form[key]) newErrors[key] = "This field is required";
     });
@@ -34,6 +37,10 @@ function ContactUs() {
     
     if (Object.keys(newErrors).length === 0) {
       console.log("Form submitted", form);
+    }
+
+    if(Object.keys(newErrors).length === 0) {
+        setMessageSendSuccess(true)
     }
   };
 
@@ -92,6 +99,9 @@ function ContactUs() {
             error={!!errors.message}
             helperText={errors.message}
           />
+          { messageSendSuccess &&
+          <Typography variant="body1" color="success" align="center">Your message has been sent successfully!</Typography>
+          }
           <Button type="submit" fullWidth variant="contained" color="primary" sx={{ mt: 2 }}>
             Submit
           </Button>
