@@ -66,7 +66,7 @@ function RegisterPage() {
 
     try {
 
-      const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/register.php", {
+      const response = await fetch("./Backend/register.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ firstName, lastName, username, email, password }),

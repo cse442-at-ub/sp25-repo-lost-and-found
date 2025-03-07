@@ -6,7 +6,7 @@ import { useLocation } from "react-router";
 const ResetPassword = (e: any) => {
   const location = useLocation();
   const [email, setEmail] = useState(location.state.email);
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState("000000");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [resp, setResp] = useState({okay: false, msg: null});
@@ -61,12 +61,12 @@ const ResetPassword = (e: any) => {
                   defaultValue={email}
                   onChange={(e) => {setEmail(e.target.value);}}
                   sx={{m: 1}}/>
-              <TextField fullWidth required id="otp" label="OTP Token"
+              {/* <TextField fullWidth required id="otp" label="OTP Token"
                   name="otp" autoComplete="otp" autoFocus
                   onChange={(e) => {setOtp(e.target.value);}}
                   error={ ! /\d{6}/.test(otp) }
                   helperText="OTP token is 6 digits"
-                  sx={{m: 1}}/>
+                  sx={{m: 1}}/> */}
               <TextField fullWidth required id="password" label="Password"
                   name="password" autoComplete="password" type="password"
                   onChange={(e) => {setPassword(e.target.value);}}

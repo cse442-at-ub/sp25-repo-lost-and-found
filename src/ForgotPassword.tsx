@@ -48,9 +48,8 @@ const ForgotPassword = (e: any) => {
                   sx={{m: 1}}/>
               <Typography hidden={errMsg.length===0} sx={{color: "#cc0000"}}>{errMsg}</Typography>
               <Button fullWidth variant="contained" type="submit"
-                  // onClick={() => { navigate("/reset-password"); }}
                   disabled={email.length === 0}
-                  sx={{m: 1}}>Send OTP</Button>
+                  sx={{m: 1}}>Reset Password</Button>
               <Link to="/login"><Button fullWidth sx={{m: 1}}>Return to Login</Button></Link>
             </Box>
           </CardContent>
