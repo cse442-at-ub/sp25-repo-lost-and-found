@@ -12,7 +12,7 @@ const ForgotPassword = (e: any) => {
     event.preventDefault();
 
     try {
-      const response = await fetch('https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/julia/cancel/Backend/src/sendOtp.php', {
+      const response = await fetch('./Backend/src/sendOtp.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
