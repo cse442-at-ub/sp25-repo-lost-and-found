@@ -40,7 +40,7 @@ function App() {
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/contact-us" element={<ContactUs />} />
-        <Route path="/ReportFoundItem" element={<ReportFoundItem />} />
+        <Route path="/reportfounditem" element={<ReportFoundItem />} />
       </Routes>
       </HashRouter>
     </>

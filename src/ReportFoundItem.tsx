@@ -3,7 +3,7 @@ import LayoutDefault from './LayoutDefault';
 import { Box, Button, TextField, Typography, Paper, Grid, IconButton, Snackbar, Alert, Input, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 
-function FoundItemPage() {
+function ReportFoundItem() {
     const [itemName, setItemName] = useState('');
     const [category, setCategory] = useState('');
     const [dateFound, setDateFound] = useState('');
@@ -233,4 +233,4 @@ function FoundItemPage() {
     );
 }
 
-export default FoundItemPage;
+export default ReportFoundItem;
