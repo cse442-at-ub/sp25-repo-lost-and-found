@@ -20,6 +20,7 @@ import Settings from './Settings'
 import ChangePassword from './ChangePassword'
 import AboutUs from './AboutUs'
 import ContactUs from './ContactUs'
+import ReportLostItem from './ReportLostItem'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -38,6 +39,7 @@ function App() {
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/contact-us" element={<ContactUs />} />
+        <Route path="/report-lost-item" element={<ReportLostItem />} />
       </Routes>
       </HashRouter>
     </>
