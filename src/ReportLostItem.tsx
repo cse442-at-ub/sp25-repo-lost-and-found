@@ -18,15 +18,49 @@ const FileInput = styled('input')({
 
 function ReportLostItem() {
   const { control, handleSubmit, register, formState: { errors } } = useForm();
-  const [preview, setPreview] = useState(null);
+  const [fileUpload, setFileUpload] = useState(null)
+  const [preview, setPreview] = useState("");
+  const [successful, setSuccessful] = useState("");
 
-  const onSubmit = (data) => {
-    console.log('Form Data:', data);
-  };
+  const onSubmit = async (data) => {
+    const formData = new FormData();
+    
+    formData.append("name", data.itemName);
+    formData.append("date", data.dateLost);
+    formData.append("last_seen_location", data.location);
+    formData.append("description", data.description);
+    formData.append("first_name", data.firstName);
+    formData.append("last_name", data.lastName);
+    formData.append("email_address", data.email);
+    formData.append("phone_number", data.phone);
+
+    if (fileUpload) {
+        formData.append("file", fileUpload);
+    }
+
+    try {
+        const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/reportlostitem.php", {
+            method: "POST",
+            body: formData,
+        });
+
+        const result = await response.json();
+        console.log("Response:", result);
+        if(result['success']) {
+          setSuccessful("success")
+        } else {
+          setSuccessful("error")
+        }
+    } catch (error) {
+        console.error("Error submitting form:", error);
+        setSuccessful("error")
+    }
+};
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+      setFileUpload(file)
       setPreview(URL.createObjectURL(file));
     }
   };
@@ -51,7 +85,7 @@ function ReportLostItem() {
                 sx={{ mb: 2 }}
               />
 
-              <Controller
+              {/* <Controller
                 name="category"
                 control={control}
                 defaultValue=""
@@ -71,7 +105,7 @@ function ReportLostItem() {
                     <MenuItem value="Clothing">Clothing</MenuItem>
                   </TextField>
                 )}
-              />
+              /> */}
 
               <TextField
                 label="Date Lost"
@@ -177,6 +211,14 @@ function ReportLostItem() {
                 helperText={errors.phone?.message}
                 sx={{ mb: 2 }}
               />
+
+              {successful == "success" && 
+                <Typography color="success">Posted your lost item. Hopefully it's found soon!</Typography>
+              }
+
+              {successful == "error" && 
+                <Typography color="error">There was an error posting your item at this time.</Typography>
+              }
 
               {/* Submit Button */}
               <Button type="submit" variant="contained" fullWidth>
