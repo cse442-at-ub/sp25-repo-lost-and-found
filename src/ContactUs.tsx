@@ -16,7 +16,7 @@ const ContactUs = (e: any) => {
     event.preventDefault();
 
     try {
-      const response = await fetch('../Backend/contactUs.php', {
+      const response = await fetch('./Backend/contactUs.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
