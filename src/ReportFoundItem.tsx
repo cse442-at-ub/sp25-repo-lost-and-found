@@ -55,7 +55,7 @@ function FoundItemPage() {
         }
 
         try {
-            const response = await fetch('https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/founditem.php', {
+            const response = await fetch('https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/ReportFoundItem.php', {
             //const response = await fetch('https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/ReportFoundItem.php', {
                 method: 'POST',
                 body: formData,
