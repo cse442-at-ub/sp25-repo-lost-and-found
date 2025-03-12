@@ -30,13 +30,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email_address = $_POST['email_address'] ?? '';
     $phone_number = $_POST['phone_number'] ?? '';
 
+    // Handle File Upload
+    $filePath = null;
+    if (!empty($_FILES["file"]["name"])) {
+        $uploadDir = "uploads/"; // Ensure this directory exists and has write permissions
+        $fileName = basename($_FILES["file"]["name"]);
+        $targetFilePath = $uploadDir . time() . "_" . $fileName; // Unique file name
+        $fileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
+
+        // Validate file type (optional, adjust as needed)
+        $allowedTypes = ["jpg", "png", "pdf", "jpeg", "gif"];
+        if (in_array($fileType, $allowedTypes)) {
+            if (move_uploaded_file($_FILES["file"]["tmp_name"], $targetFilePath)) {
+                $filePath = $targetFilePath;
+            } else {
+                echo json_encode(["error" => "File upload failed"]);
+                exit;
+            }
+        } else {
+            echo json_encode(["error" => "Invalid file type"]);
+            exit;
+        }
+    }
+
     // Prepare SQL statement to prevent SQL injection
-    $stmt = $conn->prepare("INSERT INTO lost_items (id, name, date, last_seen_location, description, first_name, last_name, email_address, phone_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO lost_items (id, name, date, last_seen_location, description, first_name, last_name, email_address, phone_number, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $id = NULL;
-    $stmt->bind_param("sssssssss", $id, $name, $date, $last_seen_location, $description, $first_name, $last_name, $email_address, $phone_number);
+    $stmt->bind_param("ssssssssss", $id, $name, $date, $last_seen_location, $description, $first_name, $last_name, $email_address, $phone_number, $filePath);
 
     if ($stmt->execute()) {
-        echo json_encode(["success" => "Record inserted successfully"]);
+        echo json_encode(["success" => "Record inserted successfully", "file_path" => $filePath]);
     } else {
         echo json_encode(["error" => "Failed to insert record"]);
     }
