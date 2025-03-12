@@ -2,8 +2,8 @@
 // Database configuration
 $host = 'localhost';
 $dbname = 'cse442_2025_spring_team_s_db';
-$username = 'dinalben'; // Replace with your database username
-$password = '50409149'; // Replace with your database password
+$username = 'dinalben'; 
+$password = '50409149'; 
 
 try {
     // Establish PDO connection

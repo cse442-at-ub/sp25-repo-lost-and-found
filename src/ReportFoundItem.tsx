@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import LayoutDefault from './LayoutDefault';
-import { Box, Button, TextField, Typography, Paper, Grid, IconButton, Snackbar, Alert, Input } from '@mui/material';
+import { Box, Button, TextField, Typography, Paper, Grid, IconButton, Snackbar, Alert, Input, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 
 function FoundItemPage() {
@@ -32,7 +32,11 @@ function FoundItemPage() {
 
     const handleSubmit = async () => {
         if (!itemName || !category || !dateFound) {
-            setSnackbar({ open: true, message: "Item name, category, and date found are required.", severity: "error" });
+            setSnackbar({
+                open: true,
+                message: 'Item name, category, and date found are required.',
+                severity: 'error',
+            });
             return;
         }
 
@@ -52,6 +56,7 @@ function FoundItemPage() {
 
         try {
             const response = await fetch('https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/founditem.php', {
+            //const response = await fetch('https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/ReportFoundItem.php', {
                 method: 'POST',
                 body: formData,
             });
@@ -80,6 +85,16 @@ function FoundItemPage() {
         }
     };
 
+    const categoryOptions = [
+        'Electronics',
+        'Documents',
+        'Clothing',
+        'Jewelry',
+        'Keys',
+        'Wallet',
+        'Other',
+    ];
+
     return (
         <LayoutDefault>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px' }}>
@@ -98,14 +113,23 @@ function FoundItemPage() {
                             />
                         </Grid>
                         <Grid item xs={12}>
-                            <TextField
-                                label="Category"
-                                variant="outlined"
-                                fullWidth
-                                required
+                            {/* Replace TextField with Select */}
+                            <FormControl fullWidth required>
+                                <InputLabel id="category-label">Category</InputLabel>
+                                <Select
+                                labelId="category-label"
+                                id="category"
                                 value={category}
+                                label="Category"
                                 onChange={(e) => setCategory(e.target.value)}
-                            />
+                                >
+                                {categoryOptions.map((option) => (
+                                    <MenuItem key={option} value={option}>
+                                    {option}
+                                    </MenuItem>
+                                ))}
+                                </Select>
+                            </FormControl>
                         </Grid>
                         <Grid item xs={12}>
                             <TextField
