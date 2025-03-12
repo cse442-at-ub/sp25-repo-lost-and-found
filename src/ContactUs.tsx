@@ -1,123 +1,96 @@
-import React, { useEffect, useState } from 'react'
-import LayoutDefault from './LayoutDefault'
-import { Box, Button, Card, CardActionArea, CardContent, CardMedia, Container, Grid2 as Grid, Paper, TextField, Typography } from '@mui/material'
-import ReportLostItem from '../public/report-lost-item.png'
-import ReportFoundItem from '../public/report-found-item.png'
-import ClaimItem from '../public/claim-item.png'
-import { useNavigate } from 'react-router'
+import { useState } from "react";
+import { Button, TextField, Box, Container, Card, CardContent, Typography, Grid2 as Grid, ListItem, List, ListItemIcon, ListItemText } from "@mui/material";
+import { Email, Phone, Schedule } from "@mui/icons-material";
+import LayoutDefault from "./LayoutDefault";
+import { Link, useNavigate } from "react-router";
 
-function ContactUs() {   
-    const [form, setForm] = useState({ username: "", name: "", email: "", message: "" });
-  const [errors, setErrors] = useState({});
-  const [messageSendSuccess, setMessageSendSuccess] = useState(false);
+const ContactUs = (e: any) => {
+  // const navigate = useNavigate();
+  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [resp, setResp] = useState({okay: false, msg: null});
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    let newErrors = {};
-    
-    setMessageSendSuccess(false)
-
-    Object.keys(form).forEach((key) => {
-      if (!form[key]) newErrors[key] = "This field is required";
-    });
-    
-    if (form.email && !validateEmail(form.email)) {
-      newErrors.email = "Invalid email address";
-    }
-
-    setErrors(newErrors);
-    
-    if (Object.keys(newErrors).length === 0) {
-      console.log("Form submitted", form);
-    }
-
-    if(Object.keys(newErrors).length === 0) {
-        setMessageSendSuccess(true)
+    try {
+      const response = await fetch('../Backend/contactUs.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          name: name,
+          email: email,
+          message: message
+        }),
+      });
+      const j = await response.json();
+      console.log(j);
+      setResp(j);
+    } catch (error) {
+      console.error('Error during posting message:', error);
     }
   };
 
   return (
-    <>
     <LayoutDefault>
-    <Container maxWidth="md" sx={{ mt: 5 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h6" align="center" gutterBottom>
-          Contact Us Form
-        </Typography>
-        <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Username"
-            variant="outlined"
-            name="username"
-            value={form.username}
-            onChange={handleChange}
-            error={!!errors.username}
-            helperText={errors.username}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Name"
-            variant="outlined"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            error={!!errors.name}
-            helperText={errors.name}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Email Address"
-            variant="outlined"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            error={!!errors.email}
-            helperText={errors.email}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Message"
-            multiline
-            rows={4}
-            variant="outlined"
-            name="message"
-            value={form.message}
-            onChange={handleChange}
-            error={!!errors.message}
-            helperText={errors.message}
-          />
-          { messageSendSuccess &&
-          <Typography variant="body1" color="success" align="center">Your message has been sent successfully!</Typography>
-          }
-          <Button type="submit" fullWidth variant="contained" color="primary" sx={{ mt: 2 }}>
-            Submit
-          </Button>
+    <Typography variant="h3" sx={{textAlign: "center", mt: 10}}>Contact Us</Typography>
+    <Grid container direction="row-reverse" spacing={1} rowSpacing={5} sx={{marginTop: 5, maxWidth: 800, marginLeft: "auto", marginRight: "auto"}}>
+      <Grid size={{xs: 12, md: 4}}>
+        <List sx={{marginLeft: "auto", marginRight: "auto", width: "fit-content"}}>
+          <ListItem>
+            <ListItemIcon><Phone sx={{fontSize: "32pt"}}/></ListItemIcon>
+            <ListItemText primary="1 (716) 234-5678" slotProps={{primary: {fontSize: "16pt"}}} />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon><Email sx={{fontSize: "32pt"}}/></ListItemIcon>
+            <ListItemText primary="lostandfound@email.com" slotProps={{primary: {fontSize: "16pt"}}} />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon><Schedule sx={{fontSize: "32pt"}}/></ListItemIcon>
+            <ListItemText primary="Weekdays 9 AM - 4 PM" slotProps={{primary: {fontSize: "16pt"}}} />
+          </ListItem>
+        </List>
+      </Grid>
+      <Grid size={{xs: 12, md: 8}}>
+        <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", marginRight: "auto", marginLeft: "auto", maxWidth: 600}}>
+          <Card>
+            <CardContent>
+              <Box component="form" onSubmit={handleSubmit} sx={{m: 1}}>
+                <TextField fullWidth required id="username" label="Username"
+                    name="username" autoComplete="username" autoFocus type="username"
+                    onChange={(e) => { setUsername(e.target.value); }}
+                    sx={{m: 1}}/>
+                <TextField fullWidth required id="name" label="Name"
+                    name="name" autoComplete="name" autoFocus type="name"
+                    onChange={(e) => { setName(e.target.value); }}
+                    sx={{m: 1}}/>
+                <TextField fullWidth required id="email" label="Email Address"
+                    name="email" autoComplete="email" autoFocus type="email"
+                    onChange={(e) => { setEmail(e.target.value); }}
+                    sx={{m: 1}}/>
+                <TextField fullWidth required id="message" label="Message"
+                    name="message" autoComplete="message" autoFocus type="message"
+                    multiline minRows={5}
+                    onChange={(e) => { setMessage(e.target.value); }}
+                    sx={{m: 1}}/>
+                <Typography hidden={resp.msg===null} sx={{color: resp.okay?"#000000":"#cc0000"}}>{resp.msg || ""}</Typography>
+                <Button fullWidth variant="contained" type="submit"
+                    // onClick={() => { navigate("/reset-password"); }}
+                    // disabled={email.length === 0}
+                    sx={{m: 1}}>Send</Button>
+              </Box>
+            </CardContent>
+          </Card>
         </Box>
-        <Box sx={{ mt: 4, textAlign: "center" }}>
-          <Typography variant="body1">1 (716) 234-5678</Typography>
-          <Typography variant="body1">lostandfound@email.com</Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            Weekdays 9 AM - 4 PM <br /> Weekends Closed
-          </Typography>
-        </Box>
-      </Paper>
-    </Container>
+      </Grid>
+    </Grid>
     </LayoutDefault>
-    </>
   );
-}
+};
 
-export default ContactUs
+export default ContactUs;
