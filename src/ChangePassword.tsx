@@ -108,7 +108,8 @@ const ChangePassword: React.FC = () => {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/change-password.php', {
+      // Updated API endpoint
+      const response = await fetch('https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/changepassword.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
