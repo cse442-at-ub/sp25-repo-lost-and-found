@@ -21,6 +21,7 @@ import ChangePassword from './ChangePassword'
 import AboutUs from './AboutUs'
 import ContactUs from './ContactUs'
 import ReportLostItem from './ReportLostItem'
+import ReportFoundItem from './ReportFoundItem'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -40,6 +41,7 @@ function App() {
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/report-lost-item" element={<ReportLostItem />} />
+        <Route path="/report-found-item" element={<ReportFoundItem />} />
       </Routes>
       </HashRouter>
     </>
