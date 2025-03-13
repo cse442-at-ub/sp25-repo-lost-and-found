@@ -85,7 +85,7 @@ function HomePage() {
                         </Card>
                     </Grid>
                     <Grid item size={4}>
-                        <Card sx={{ maxWidth: 345 }}>
+                        <Card sx={{ maxWidth: 345 }} onClick={() => navigate('/claim')}>
                             <CardActionArea>
                                 <CardMedia
                                 component="img"
