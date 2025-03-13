@@ -13,7 +13,8 @@ import {
   ListItemIcon,
   ListItemText,
   Snackbar,
-  Alert
+  Alert,
+  AlertTitle
 } from '@mui/material';
 import { 
   Visibility, 
@@ -48,10 +49,11 @@ const ChangePassword: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  // Enhanced notification with MUI styling
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
-    severity: 'success' | 'error';
+    severity: 'success' | 'error' | 'warning' | 'info';
   }>({
     open: false,
     message: '',
@@ -314,7 +316,7 @@ const ChangePassword: React.FC = () => {
         </Paper>
       </Container>
 
-      {/* Notification system */}
+      {/* Notification system using MUI Material */}
       <Snackbar 
         open={notification.open} 
         autoHideDuration={6000} 
@@ -325,7 +327,10 @@ const ChangePassword: React.FC = () => {
           onClose={handleCloseNotification} 
           severity={notification.severity}
           variant="filled"
+          sx={{ width: '100%' }}
+          elevation={6}
         >
+          <AlertTitle>{notification.severity === 'success' ? 'Success' : 'Error'}</AlertTitle>
           {notification.message}
         </Alert>
       </Snackbar>
