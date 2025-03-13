@@ -21,29 +21,29 @@ if ($conn->connect_error) {
 
 // Check if form data is sent via POST
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = $_POST['itemName'] ?? ''; // Changed from 'name' to 'itemName' to match your React component
-    $date = $_POST['dateFound'] ?? ''; // Changed from 'date' to 'dateFound' to match your React component
-    $location = $_POST['location'] ?? '';
+    $item_name = $_POST['name'] ?? ''; // Corrected to match your table
+    $category = $_POST['category'] ?? ''; // Added category
+    $date_found = $_POST['date_found'] ?? '';
+    $location_found = $_POST['found_location'] ?? ''; // Corrected to match your table
     $description = $_POST['description'] ?? '';
-    $first_name = $_POST['firstName'] ?? ''; // Changed from 'first_name' to 'firstName' to match your React component
-    $last_name = $_POST['lastName'] ?? ''; // Changed from 'last_name' to 'lastName' to match your React component
-    $email_address = $_POST['email'] ?? ''; // Changed from 'email_address' to 'email' to match your React component
-    $phone_number = $_POST['phone'] ?? ''; // Changed from 'phone_number' to 'phone' to match your React component
-    $category = $_POST['category'] ?? ''; // Added category field
+    $first_name = $_POST['finder_first_name'] ?? ''; // Corrected to match your table
+    $last_name = $_POST['finder_last_name'] ?? ''; // Corrected to match your table
+    $email = $_POST['finder_email_address'] ?? ''; // Corrected to match your table
+    $phone = $_POST['finder_phone_number'] ?? ''; // Corrected to match your table
 
     // Handle File Upload
-    $filePath = null;
-    if (!empty($_FILES["image"]["name"])) { // Changed from "file" to "image" to match your React component
+    $image = null; // Corrected to match your table
+    if (!empty($_FILES["file"]["name"])) {
         $uploadDir = "uploads/"; // Ensure this directory exists and has write permissions
-        $fileName = basename($_FILES["image"]["name"]); // Changed from "file" to "image" to match your React component
+        $fileName = basename($_FILES["file"]["name"]);
         $targetFilePath = $uploadDir . time() . "_" . $fileName; // Unique file name
         $fileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
 
         // Validate file type (optional, adjust as needed)
         $allowedTypes = ["jpg", "png", "pdf", "jpeg", "gif"];
         if (in_array($fileType, $allowedTypes)) {
-            if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFilePath)) { // Changed from "file" to "image" to match your React component
-                $filePath = $targetFilePath;
+            if (move_uploaded_file($_FILES["file"]["tmp_name"], $targetFilePath)) {
+                $image = $targetFilePath; // Corrected to match your table
             } else {
                 echo json_encode(["error" => "File upload failed"]);
                 exit;
@@ -55,12 +55,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Prepare SQL statement to prevent SQL injection
-    $stmt = $conn->prepare("INSERT INTO found_items (id, name, category, date, location, description, first_name, last_name, email_address, phone_number, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"); // Added category field to the SQL statement
-    $id = NULL;
-    $stmt->bind_param("sssssssssss", $id, $name, $category, $date, $location, $description, $first_name, $last_name, $email_address, $phone_number, $filePath); // Added category to the bind_param
+    $stmt = $conn->prepare("INSERT INTO found_items (item_name, category, date_found, location_found, description, first_name, last_name, email, phone, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssssssss", $item_name, $category, $date_found, $location_found, $description, $first_name, $last_name, $email, $phone, $image);
 
     if ($stmt->execute()) {
-        echo json_encode(["success" => "Record inserted successfully", "file_path" => $filePath]);
+        echo json_encode(["success" => "Record inserted successfully", "image_path" => $image]);
     } else {
         echo json_encode(["error" => "Failed to insert record"]);
     }
