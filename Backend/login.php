@@ -1,14 +1,11 @@
 <?php
 // Database configuration
-$host = 'localhost';
-$dbname = 'cse442_2025_spring_team_s_db';
-$username = 'dinalben';
-$password = '50409149';
+require_once 'db.php';
+require_once 'session.php';
 
 try {
     // Establish PDO connection
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = getDbConnection();
 
     header('Content-Type: application/json');
 
@@ -29,13 +26,16 @@ try {
             $hashedPassword = $stmt->fetchColumn();
 
             // Prepare and execute the SQL query
-            $stmt2 = $pdo->prepare("SELECT user_id FROM users WHERE email = ?");
+            $stmt2 = $pdo->prepare("SELECT user_id, is_admin FROM users WHERE email = ?");
             $stmt2->execute([$email]);
-            $user_id = $stmt2->fetchColumn();
+            $result = $stmt2->fetch();
+            $user_id = $result['user_id'];
+            $is_admin = $result['is_admin'] != 0;
 
             if ($hashedPassword && password_verify($password, $hashedPassword)) {
                 session_start();
                 $_SESSION["user_id"] = $user_id;
+                startSession($is_admin);
                 echo json_encode(["success" => true, "message" => "Login successful"]);
             } else {
                 echo json_encode(["success" => false, "message" => "Invalid email or password"]);
