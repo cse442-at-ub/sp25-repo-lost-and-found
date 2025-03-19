@@ -8,13 +8,12 @@ function AdminClaim() {
         <LayoutDefault>
         <Grid container spacing={3} style={{ padding: 20 }}>
             {/* Lost Item Card */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={6} alignSelf={"center"}>
                 <Card>
-                <CardMedia
-                    component="img"
-                    image="./admin-claim-item-example.png" // Replace with actual image path
-                    alt="iPhone Pro 11"
-                />
+                <CardMedia>
+                    <img src="./admin-claim-item-example.png" // Replace with actual image path
+                    alt="Item"></img>
+                </CardMedia>
                 <CardContent>
                     <Typography variant="h6">iPhone Pro 11</Typography>
                     <Typography variant="body2">Found by Laura</Typography>
@@ -30,13 +29,12 @@ function AdminClaim() {
             </Grid>
             
             {/* Claim Card */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={6} alignSelf={"center"}>
                 <Card>
-                <CardMedia
-                    component="img"
-                    image="./admin-claim-person-example.png" // Replace with actual image path
-                    alt="Claimant"
-                />
+                <CardMedia>
+                    <img src="./admin-claim-person-example.png" // Replace with actual image path
+                    alt="Claimant"></img>
+                </CardMedia>
                 <CardContent>
                     <Typography variant="h6">Claim</Typography>
                     <Typography variant="body2">Name: Emily</Typography>
