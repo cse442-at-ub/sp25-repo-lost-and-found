@@ -19,7 +19,7 @@ const ViewMessages = (e: any) => {
   ];
 
   const getRows = function() {
-    fetch('../Backend/messages.php', {
+    fetch('./Backend/messages.php', {
       method: 'GET',
     })
     .then((response) => {
@@ -30,7 +30,7 @@ const ViewMessages = (e: any) => {
   }
 
   const deleteRows = function() {
-    fetch('../Backend/messages.php', {
+    fetch('./Backend/messages.php', {
       method: 'DELETE',
       body: JSON.stringify({"selected": selected})
     })
