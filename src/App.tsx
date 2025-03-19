@@ -23,6 +23,9 @@ import ContactUs from './ContactUs'
 import ReportLostItem from './ReportLostItem'
 import ReportFoundItem from './ReportFoundItem'
 import ClaimPage from './ClaimPage'
+import AdminConsole from './AdminConsole'
+import ViewMessages from './ViewMessages'
+import NotAdmin from './NotAdmin'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -44,6 +47,9 @@ function App() {
         <Route path="/report-lost-item" element={<ReportLostItem />} />
         <Route path="/report-found-item" element={<ReportFoundItem />} />
         <Route path="/claim" element={<ClaimPage />} />
+        <Route path="/admin" element={<AdminConsole />} />
+        <Route path="/view-messages" element={<ViewMessages />} />
+        <Route path="/not-admin" element={<NotAdmin />} />
       </Routes>
       </HashRouter>
     </>
