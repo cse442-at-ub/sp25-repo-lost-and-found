@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Box, Button, Link, TextField, Typography } from '@mui/material';
 
 import LayoutDefault from './LayoutDefault';
+import { useNavigate } from 'react-router';
 
 function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const validateEmail = (email: string) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -35,8 +37,8 @@ function LoginPage() {
         }
 
         try {
-            const response = await fetch('./Backend/login.php', {
-            //const response = await fetch("http://localhost:5173/CSE442/2025-Spring/cse-442s/backend/login.php", {
+            const response = await fetch('../Backend/login.php', {
+            //const response = await fetch("/CSE442/2025-Spring/cse-442s/julia/admintest", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: email.trim(), password: password.trim() }),
@@ -48,7 +50,7 @@ function LoginPage() {
 
             if (response.ok && data.success) {
                 console.log("Redirecting to the homepage...");
-                window.location.href = "/CSE442/2025-Spring/cse-442s/";
+                navigate('/');
             } else {
                 setError(data.message || "Invalid credentials.");
             }
