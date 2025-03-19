@@ -37,8 +37,8 @@ function LoginPage() {
         }
 
         try {
-            const response = await fetch('../Backend/login.php', {
-            //const response = await fetch("/CSE442/2025-Spring/cse-442s/julia/admintest", {
+            const response = await fetch('./Backend/login.php', {
+            
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: email.trim(), password: password.trim() }),
