@@ -8,7 +8,7 @@ const AdminConsole = (e: any) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('../Backend/validateAdmin.php')
+    fetch('./Backend/validateAdmin.php')
     .then((response) => {
       if (!response.ok) navigate('/not-admin');
     })
