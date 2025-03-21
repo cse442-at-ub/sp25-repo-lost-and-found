@@ -19,6 +19,12 @@ const AdminConsole = (e: any) => {
     <Container>
       <Typography variant="h3">Admin Console</Typography>
       <MenuList>
+        <MenuItem component={Link} to="/admin-claim">
+          <ListItemText>Admin Claim</ListItemText>
+        </MenuItem>
+        <MenuItem component={Link} to="/admin-match">
+          <ListItemText>Admin Match</ListItemText>
+        </MenuItem>
         <MenuItem component={Link} to="/view-messages">
           <ListItemText>View Messages</ListItemText>
         </MenuItem>
