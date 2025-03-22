@@ -53,7 +53,7 @@ function ResponsiveAppBar() {
 
   const Logout = () => {
     handleCloseUserMenu();
-    fetch('../Backend/logout.php')
+    fetch('./Backend/logout.php')
     .then(() => {
       window.location.reload();
     });
