@@ -13,13 +13,15 @@ import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 import { useNavigate } from 'react-router';
+import { useCookies } from 'react-cookie';
 
-const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'About Us', 'Settings', 'Contact Us', 'Admin'];
+const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'About Us', 'Settings', 'Contact Us'];
 
 function ResponsiveAppBar() {
   const navigate = useNavigate()
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+  const [cookies, setCookie, removeCookie] = useCookies(['is_admin']);
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -49,14 +51,12 @@ function ResponsiveAppBar() {
     navigate("/" + pageName)
   }
 
-  function deleteAllCookies() {
-    document.cookie = "PHPSESSID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
-  }
-
   const Logout = () => {
-    deleteAllCookies()
-    handleCloseUserMenu()
-    window.location.reload();
+    handleCloseUserMenu();
+    fetch('./Backend/logout.php')
+    .then(() => {
+      window.location.reload();
+    });
   }
 
   return (
@@ -113,6 +113,12 @@ function ResponsiveAppBar() {
                   <Typography sx={{ textAlign: 'center' }}>{page}</Typography>
                 </MenuItem>
               ))}
+              {
+                cookies.is_admin !== true? null :
+                <MenuItem key='Admin Console' onClick={() => {navigate('/admin-console')}}>
+                  <Typography sx={{ textAlign: 'center' }}>Admin Console</Typography>
+                </MenuItem>
+              }
             </Menu>
           </Box>
           <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
@@ -144,6 +150,14 @@ function ResponsiveAppBar() {
                 {page}
               </Button>
             ))}
+            {
+              cookies.is_admin !== true? null :
+              <Button
+                key="Admin Console"
+                onClick={() => {navigate('/admin-console')}}
+                sx={{ my: 2, color: 'white', display: 'block' }}
+              >Admin Console</Button>
+            }
           </Box>
           <Box sx={{ flexGrow: 0 }}>
             <Tooltip title="Open settings">
