@@ -23,6 +23,20 @@ function startSession($isAdmin = false) {
   $stmt->execute([$sessionId, $isAdminInt]);
 
   setcookie('session_id', $sessionId, time() + $sessionTimeout, '/', '', false, true);
+  // help frontend to identify whether the user is admin, thus should not be HTTPOnly
+  setcookie('is_admin', $isAdmin? "true":"false", time() + $sessionTimeout, '/', '', false, false);
+}
+
+// Function to start a session
+function endSession() {
+  if (isset($_COOKIE['session_id'])) {
+    $pdo = getDbConnection();
+    $stmt = $pdo->prepare("DELETE FROM sessions WHERE session_id = ?");
+    $stmt->execute([$sessionId]);
+
+    setcookie('session_id', "", 0, '/', '', false, true);
+    setcookie('is_admin', "", 0, '/', '', false, false);
+  }
 }
 
 // Function to validate a session
