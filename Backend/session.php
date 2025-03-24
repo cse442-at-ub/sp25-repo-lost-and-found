@@ -1,5 +1,4 @@
 <?php
-
 // Database configuration
 require_once 'db.php';
 
@@ -22,20 +21,26 @@ function startSession($isAdmin = false) {
   $stmt = $pdo->prepare("INSERT INTO sessions (session_id, is_admin) VALUES (?, ?)");
   $stmt->execute([$sessionId, $isAdminInt]);
 
-  setcookie('session_id', $sessionId, time() + $sessionTimeout, '/', '', false, true);
+  setcookie('session_id', $sessionId, time() + $sessionTimeout, '/', '', false, false);
   // help frontend to identify whether the user is admin, thus should not be HTTPOnly
   setcookie('is_admin', $isAdmin? "true":"false", time() + $sessionTimeout, '/', '', false, false);
+  // Add a UI-specific cookie that can be read by JavaScript
+  setcookie('user_logged_in', 'true', time() + $sessionTimeout, '/', '', false, false);
 }
 
-// Function to start a session
+// Function to end a session
 function endSession() {
   if (isset($_COOKIE['session_id'])) {
+    $sessionId = $_COOKIE['session_id']; // Fixed: Get the sessionId from cookie
+    
     $pdo = getDbConnection();
     $stmt = $pdo->prepare("DELETE FROM sessions WHERE session_id = ?");
     $stmt->execute([$sessionId]);
 
-    setcookie('session_id', "", 0, '/', '', false, true);
-    setcookie('is_admin', "", 0, '/', '', false, false);
+    // Use consistent expiration time format (time() - 3600)
+    setcookie('session_id', "", time() - 3600, '/', '', false, true);
+    setcookie('is_admin', "", time() - 3600, '/', '', false, false);
+    setcookie('user_logged_in', "", time() - 3600, '/', '', false, false);
   }
 }
 
@@ -77,32 +82,15 @@ function validateSession($shouldBeAdmin = false) {
     exit("Admin session required.");
   }
 
-  // Refresh the session timeout
+  // Refresh the session timeout - use consistent parameters for all cookies
   $stmt = $pdo->prepare("UPDATE sessions SET created_at = NOW() WHERE session_id = ?");
   $stmt->execute([$sessionId]);
-  setcookie('session_id', $sessionId, time() + $sessionTimeout, '/');
-
+  
+  // Fixed: Use consistent parameters for all cookies
+  setcookie('session_id', $sessionId, time() + $sessionTimeout, '/', '', false, true);
+  setcookie('is_admin', $isAdmin? "true":"false", time() + $sessionTimeout, '/', '', false, false);
+  setcookie('user_logged_in', 'true', time() + $sessionTimeout, '/', '', false, false);
+  
   return $isAdmin;
 }
-
-// Example usage (inside a protected page)
-// include 'session_manager.php';
-// validateSession(true); // Require admin session
-// echo "Admin page content";
-
-//Example usage (inside a regular page)
-//include 'session_manager.php';
-//validateSession(false); // require any session
-//echo "Regular page content";
-
-//Example usage (for login)
-//include 'session_manager.php';
-//startSession(true); //start an admin session
-//echo "logged in as admin";
-
-//Example usage (for login)
-//include 'session_manager.php';
-//startSession(false); //start a regular session
-//echo "logged in as user";
-
 ?>

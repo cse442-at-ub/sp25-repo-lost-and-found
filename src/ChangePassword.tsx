@@ -95,7 +95,7 @@ const ChangePassword: React.FC = () => {
       });
       return;
     }
-
+  
     const isValidPassword = Object.values(passwordValidation).every(Boolean);
     
     if (!isValidPassword) {
@@ -106,12 +106,12 @@ const ChangePassword: React.FC = () => {
       });
       return;
     }
-
+  
     try {
       setLoading(true);
       
       // Updated API endpoint
-      const response = await fetch('https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/changepassword.php', {
+      const response = await fetch('./Backend/changepassword.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ const ChangePassword: React.FC = () => {
         }),
         credentials: 'include' // Include cookies for session authentication
       });
-
+  
       const data: ApiResponse = await response.json();
       
       if (data.success) {
@@ -138,6 +138,11 @@ const ChangePassword: React.FC = () => {
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        
+        // Reset password visibility states too
+        setShowCurrentPassword(false);
+        setShowNewPassword(false);
+        setShowConfirmPassword(false);
       } else {
         // Password change failed
         setNotification({
@@ -183,78 +188,78 @@ const ChangePassword: React.FC = () => {
             }}
           >
             <Box sx={{ width: '100%', mb: 2 }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="current-password"
-                label="Current Password"
-                type={showCurrentPassword ? 'text' : 'password'}
-                id="current-password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => togglePasswordVisibility(setShowCurrentPassword, showCurrentPassword)}
-                        edge="end"
-                      >
-                        {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="new-password"
-                label="New Password"
-                type={showNewPassword ? 'text' : 'password'}
-                id="new-password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => togglePasswordVisibility(setShowNewPassword, showNewPassword)}
-                        edge="end"
-                      >
-                        {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="confirm-password"
-                label="Confirm New Password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                id="confirm-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => togglePasswordVisibility(setShowConfirmPassword, showConfirmPassword)}
-                        edge="end"
-                      >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-              />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="current-password"
+              label="Current Password"
+              type={showCurrentPassword ? 'text' : 'password'}
+              id="current-password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => togglePasswordVisibility(setShowCurrentPassword, showCurrentPassword)}
+                      edge="end"
+                    >
+                      {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="new-password"
+              label="New Password"
+              type={showNewPassword ? 'text' : 'password'}
+              id="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => togglePasswordVisibility(setShowNewPassword, showNewPassword)}
+                      edge="end"
+                    >
+                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="confirm-password"
+              label="Confirm New Password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              id="confirm-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => togglePasswordVisibility(setShowConfirmPassword, showConfirmPassword)}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+            />
             </Box>
 
             <Box sx={{ width: '100%', mb: 2 }}>
