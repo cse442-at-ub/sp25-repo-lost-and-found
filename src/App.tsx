@@ -28,6 +28,8 @@ import AdminConsole from './AdminConsole'
 import ViewMessages from './ViewMessages'
 import NotAdmin from './NotAdmin'
 import AdminMatch from './AdminMatch'
+import NotificationDashboard from './NotificationDashboard'
+import NotificationDetail from './NotificationDetail'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -54,6 +56,8 @@ function App() {
         <Route path="/view-messages" element={<ViewMessages />} />
         <Route path="/not-admin" element={<NotAdmin />} />
         <Route path="/admin-match" element={<AdminMatch />} />
+        <Route path="/notifications" element={<NotificationDashboard />} />
+        <Route path="/notification-detail/:id" element={<NotificationDetail />} />
       </Routes>
       </HashRouter>
     </>

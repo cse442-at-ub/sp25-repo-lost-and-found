@@ -39,7 +39,7 @@ const Settings = () => {
     const fetchUserData = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/settings.php");
+            const response = await fetch("./Backend/settings.php");
     
             const data = await response.json();
     
@@ -138,7 +138,7 @@ const Settings = () => {
             setIsLoading(true);
             console.log("Saving data to backend:", JSON.stringify({ data: updatedData, type }));
     
-            const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/settings.php", {
+            const response = await fetch("./Backend/settings.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ data: updatedData, type }),
@@ -270,7 +270,10 @@ const Settings = () => {
     
         const saveSuccessful = await handleSaveToDB(updatedNotifications, "notifications");
     
-        if (!saveSuccessful) {
+        if (saveSuccessful) {
+            // ADD THIS LINE to notify other components about settings change
+            window.dispatchEvent(new Event('notificationSettingsChanged'));
+        } else {
             // Revert change if API call fails
             setNotifications((prev) => ({ ...prev, [type]: !prev[type] }));
         }
@@ -292,7 +295,7 @@ const Settings = () => {
             setIsLoading(true);
             console.log("Sending account deletion request");
     
-            const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/settings.php", {
+            const response = await fetch("./Backend/settings.php", {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
                 credentials: 'include' // Include cookies for session

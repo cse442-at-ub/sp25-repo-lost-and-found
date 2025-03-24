@@ -14,6 +14,9 @@ import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 import { useNavigate } from 'react-router';
 import { useCookies } from 'react-cookie';
+import NotificationIcon from './NotificationIcon';
+
+
 
 const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'About Us', 'Settings', 'Contact Us'];
 
@@ -21,7 +24,7 @@ function ResponsiveAppBar() {
   const navigate = useNavigate()
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
-  const [cookies, setCookie, removeCookie] = useCookies(['is_admin']);
+  const [cookies, setCookie, removeCookie] = useCookies(['is_admin', 'session_id']);
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -53,11 +56,21 @@ function ResponsiveAppBar() {
 
   const Logout = () => {
     handleCloseUserMenu();
+    
     fetch('./Backend/logout.php')
-    .then(() => {
-      window.location.reload();
-    });
-  }
+      .then(response => {
+        removeCookie('is_admin', { path: '/' });
+        removeCookie('session_id', { path: '/' });
+        
+        window.location.reload();
+      })
+      .catch(error => {
+        console.error('Logout error:', error);
+        removeCookie('is_admin', { path: '/' });
+        removeCookie('session_id', { path: '/' });
+        window.location.reload();
+      });
+  };
 
   return (
     <AppBar position="static">
@@ -114,10 +127,11 @@ function ResponsiveAppBar() {
                 </MenuItem>
               ))}
               {
-                cookies.is_admin !== true? null :
-                <MenuItem key='Admin Console' onClick={() => {navigate('/admin-console')}}>
+                cookies.is_admin === "true" ? 
+                <MenuItem key='Admin Console' onClick={() => {navigate('/admin')}}>
                   <Typography sx={{ textAlign: 'center' }}>Admin Console</Typography>
                 </MenuItem>
+                : null
               }
             </Menu>
           </Box>
@@ -151,14 +165,23 @@ function ResponsiveAppBar() {
               </Button>
             ))}
             {
-              cookies.is_admin !== true? null :
+              cookies.is_admin === "true" ?
               <Button
                 key="Admin Console"
-                onClick={() => {navigate('/admin-console')}}
+                onClick={() => {navigate('/admin')}}
                 sx={{ my: 2, color: 'white', display: 'block' }}
               >Admin Console</Button>
+              : null
             }
           </Box>
+          
+          {/* Show NotificationIcon only when user is logged in */}
+          {cookies.session_id && (
+            <Box sx={{ mr: 2 }}>
+              <NotificationIcon />
+            </Box>
+          )}
+
           <Box sx={{ flexGrow: 0 }}>
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>

@@ -39,7 +39,7 @@ function ReportLostItem() {
     }
 
     try {
-        const response = await fetch("https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/reportlostitem.php", {
+        const response = await fetch("./Backend/reportlostitem.php", {
             method: "POST",
             body: formData,
         });
