@@ -23,6 +23,7 @@ import ContactUs from './ContactUs'
 import ReportLostItem from './ReportLostItem'
 import ReportFoundItem from './ReportFoundItem'
 import ClaimPage from './ClaimPage'
+import AdminClaim from './AdminClaim'
 import AdminConsole from './AdminConsole'
 import ViewMessages from './ViewMessages'
 import NotAdmin from './NotAdmin'
@@ -48,6 +49,7 @@ function App() {
         <Route path="/report-lost-item" element={<ReportLostItem />} />
         <Route path="/report-found-item" element={<ReportFoundItem />} />
         <Route path="/claim" element={<ClaimPage />} />
+        <Route path="/admin-claim" element={<AdminClaim />} />
         <Route path="/admin-console" element={<AdminConsole />} />
         <Route path="/view-messages" element={<ViewMessages />} />
         <Route path="/not-admin" element={<NotAdmin />} />
