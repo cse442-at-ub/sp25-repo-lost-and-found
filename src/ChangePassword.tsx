@@ -24,6 +24,7 @@ import {
 } from '@mui/icons-material';
 
 import LayoutDefault from './LayoutDefault';
+import { useNavigate } from 'react-router'
 
 // Define interface for password validation
 interface PasswordValidation {
@@ -42,6 +43,8 @@ interface ApiResponse {
 }
 
 const ChangePassword: React.FC = () => {
+  const navigate = useNavigate();
+
   const [currentPassword, setCurrentPassword] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
@@ -170,8 +173,20 @@ const ChangePassword: React.FC = () => {
     setter(!currentState);
   };
 
-  const navigateToLogin = () => {
-    window.location.href = '/login';
+  const navigateToLogin = async () => {
+    try {
+      // Call the logout endpoint to end the session
+      const response = await fetch('./Backend/logout.php', {
+        method: 'GET',
+        credentials: 'include' // Include cookies for session
+      });
+      
+      // Navigate to login page regardless of logout success
+      navigate('/login');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      navigate('/login');
+    }
   };
 
   return (
