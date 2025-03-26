@@ -23,8 +23,13 @@ function ResponsiveAppBar() {
   const navigate = useNavigate();
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
-  const [cookies, setCookie, removeCookie] = useCookies(['is_admin', 'session_id']);
-  const { isAuthenticated, logout } = useAuth();
+  const [cookies] = useCookies(['is_admin', 'session_id']);
+  const { isAuthenticated, isAdmin, logout } = useAuth();
+
+  // For debugging admin status
+  React.useEffect(() => {
+    console.log("Auth state in NavBar:", { isAuthenticated, isAdmin, cookieAdmin: cookies.is_admin });
+  }, [isAuthenticated, isAdmin, cookies.is_admin]);
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -57,7 +62,7 @@ function ResponsiveAppBar() {
   const handleLogout = async () => {
     handleCloseUserMenu();
     await logout();
-    //navigate('/');
+    // Force a full page reload to reset the UI state completely
     window.location.reload();
   };
 
@@ -116,11 +121,11 @@ function ResponsiveAppBar() {
                 </MenuItem>
               ))}
               {
-                cookies.is_admin === "true" ? 
+                isAdmin && (
                 <MenuItem key='Admin Console' onClick={() => {navigate('/admin-console')}}>
                   <Typography sx={{ textAlign: 'center' }}>Admin Console</Typography>
                 </MenuItem>
-                : null
+                )
               }
             </Menu>
           </Box>
@@ -154,13 +159,13 @@ function ResponsiveAppBar() {
               </Button>
             ))}
             {
-              cookies.is_admin === "true" ?
+              isAdmin && (
               <Button
                 key="Admin Console"
                 onClick={() => {navigate('/admin-console')}}
                 sx={{ my: 2, color: 'white', display: 'block' }}
               >Admin Console</Button>
-              : null
+              )
             }
           </Box>
           
