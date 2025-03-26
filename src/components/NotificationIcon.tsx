@@ -1,4 +1,3 @@
-// components/NotificationIcon.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   Badge,
@@ -15,6 +14,7 @@ import { Notifications, NotificationsOff } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router';
 import { useCookies } from 'react-cookie';
+import { useAuth } from './AuthContext';
 
 // Simple notification interface
 interface Notification {
@@ -24,13 +24,10 @@ interface Notification {
   read: boolean;
 }
 
-// Define the cookie names that will be used
-type CookieNames = 'is_admin' | 'session_id';
-
 const NotificationIcon: React.FC = () => {
   const navigate = useNavigate();
-  // Specify the extended type for useCookies
-  const [cookies] = useCookies<CookieNames>(['session_id', 'is_admin']);
+  const { isAuthenticated } = useAuth();
+  const [cookies] = useCookies(['is_admin', 'session_id']);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [enabled, setEnabled] = useState<boolean>(true);
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -51,7 +48,7 @@ const NotificationIcon: React.FC = () => {
   // Mock data fetch - replace with your API call
   useEffect(() => {
     // Only fetch notifications if user is logged in
-    if (!cookies.session_id) {
+    if (!isAuthenticated) {
       return;
     }
     
@@ -72,11 +69,11 @@ const NotificationIcon: React.FC = () => {
     ];
 
     setNotifications(mockNotifications);
-  }, [cookies.session_id]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     // Only load settings if user is logged in
-    if (!cookies.session_id) {
+    if (!isAuthenticated) {
       return;
     }
     
@@ -109,7 +106,7 @@ const NotificationIcon: React.FC = () => {
     return () => {
       window.removeEventListener('notificationSettingsChanged', handleSettingsChange);
     };
-  }, [cookies.session_id]);
+  }, [isAuthenticated]);
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -148,7 +145,7 @@ const NotificationIcon: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
   
   // Only render the notification icon if user is logged in
-  if (!cookies.session_id) {
+  if (!isAuthenticated) {
     return null;
   }
 

@@ -17,7 +17,7 @@ $_SESSION = array();
 endSession();
 
 if (isset($_COOKIE['session_id'])) {
-    setcookie('session_id', '', time() - 3600, '/');
+    setcookie('session_id', '', time() - 3600, '/','', false, true);
 }
 
 if (isset($_COOKIE['is_admin'])) {

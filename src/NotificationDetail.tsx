@@ -23,6 +23,7 @@ import { useNavigate, useParams } from 'react-router';
 import LayoutDefault from './LayoutDefault';
 import { Link } from 'react-router';
 import { useCookies } from 'react-cookie';
+import { useAuth } from './components/AuthContext';
 
 // Notification interface
 interface Notification {
@@ -39,9 +40,9 @@ interface Notification {
 const NotificationDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [cookies] = useCookies(['session_id']);
+  const { isAuthenticated, loading } = useAuth();
   const [notification, setNotification] = useState<Notification | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingNotification, setLoadingNotification] = useState<boolean>(true);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -52,18 +53,22 @@ const NotificationDetail: React.FC = () => {
     severity: "info"
   });
 
-  // Check if user is logged in, redirect if not
+  // Check if user is authenticated, redirect if not
   useEffect(() => {
-    if (!cookies.session_id) {
+    if (!loading && !isAuthenticated) {
+      setSnackbar({
+        open: true,
+        message: "Please log in to view notifications",
+        severity: "warning"
+      });
       navigate('/login');
-      return;
     }
-  }, [cookies.session_id, navigate]);
+  }, [isAuthenticated, loading, navigate]);
 
-  // Mock data fetch - replace with your API call
+  // Fetch notification data
   useEffect(() => {
-    // Skip fetch if not logged in
-    if (!cookies.session_id) return;
+    // Skip fetch if not authenticated or still checking auth status
+    if (loading || !isAuthenticated) return;
     
     // Simulating API call delay
     const fetchTimeout = setTimeout(() => {
@@ -131,11 +136,11 @@ const NotificationDetail: React.FC = () => {
           severity: "error"
         });
       }
-      setLoading(false);
+      setLoadingNotification(false);
     }, 800);
 
     return () => clearTimeout(fetchTimeout);
-  }, [id, cookies.session_id]);
+  }, [id, isAuthenticated, loading]);
 
   // Get icon based on notification type
   const getNotificationIcon = (type: string) => {

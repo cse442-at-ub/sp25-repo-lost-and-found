@@ -4,8 +4,6 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import { HashRouter, Route, Routes } from 'react-router'
 import CounterPage from './CounterPage'
-import TestRedirect from './TestRedirect'
-import MarketingPage from './MarketingPage'
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
@@ -30,18 +28,19 @@ import NotAdmin from './NotAdmin'
 import AdminMatch from './AdminMatch'
 import NotificationDashboard from './NotificationDashboard'
 import NotificationDetail from './NotificationDetail'
+import { AuthProvider } from './components/AuthContext'
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
     <>
+    <AuthProvider>
     <HashRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/test" element={<TestRedirect />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/settings" element={<Settings />} />
@@ -60,6 +59,7 @@ function App() {
         <Route path="/notification-detail/:id" element={<NotificationDetail />} />
       </Routes>
       </HashRouter>
+      </AuthProvider>
     </>
   )
 }
