@@ -21,7 +21,7 @@ function startSession($isAdmin = false) {
   $stmt = $pdo->prepare("INSERT INTO sessions (session_id, is_admin) VALUES (?, ?)");
   $stmt->execute([$sessionId, $isAdminInt]);
 
-  setcookie('session_id', $sessionId, time() + $sessionTimeout, '/', '', false, false);
+  setcookie('session_id', $sessionId, time() + $sessionTimeout, '/', '', false, true);
   // help frontend to identify whether the user is admin, thus should not be HTTPOnly
   setcookie('is_admin', $isAdmin? "true":"false", time() + $sessionTimeout, '/', '', false, false);
   // Add a UI-specific cookie that can be read by JavaScript
@@ -31,7 +31,7 @@ function startSession($isAdmin = false) {
 // Function to end a session
 function endSession() {
   if (isset($_COOKIE['session_id'])) {
-    $sessionId = $_COOKIE['session_id']; // Fixed: Get the sessionId from cookie
+    $sessionId = $_COOKIE['session_id']; 
     
     $pdo = getDbConnection();
     $stmt = $pdo->prepare("DELETE FROM sessions WHERE session_id = ?");

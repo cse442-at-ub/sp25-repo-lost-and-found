@@ -15,16 +15,16 @@ import AdbIcon from '@mui/icons-material/Adb';
 import { useNavigate } from 'react-router';
 import { useCookies } from 'react-cookie';
 import NotificationIcon from './NotificationIcon';
-
-
+import { useAuth } from './AuthContext';
 
 const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'About Us', 'Settings', 'Contact Us'];
 
 function ResponsiveAppBar() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
   const [cookies, setCookie, removeCookie] = useCookies(['is_admin', 'session_id']);
+  const { isAuthenticated, logout } = useAuth();
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -42,34 +42,23 @@ function ResponsiveAppBar() {
   };
 
   const redirectToPage = (page: string) => {
-    var pageName = page.toLowerCase()
+    var pageName = page.toLowerCase();
     //@ts-ignore
-    pageName = pageName.replaceAll(' ', '-')
+    pageName = pageName.replaceAll(' ', '-');
 
-    if(pageName == "home") {
-      navigate("/")
-      return
+    if(pageName === "home") {
+      navigate("/");
+      return;
     }
 
-    navigate("/" + pageName)
-  }
+    navigate("/" + pageName);
+  };
 
-  const Logout = () => {
+  const handleLogout = async () => {
     handleCloseUserMenu();
-    
-    fetch('./Backend/logout.php')
-      .then(response => {
-        removeCookie('is_admin', { path: '/' });
-        removeCookie('session_id', { path: '/' });
-        
-        window.location.reload();
-      })
-      .catch(error => {
-        console.error('Logout error:', error);
-        removeCookie('is_admin', { path: '/' });
-        removeCookie('session_id', { path: '/' });
-        window.location.reload();
-      });
+    await logout();
+    //navigate('/');
+    window.location.reload();
   };
 
   return (
@@ -81,7 +70,7 @@ function ResponsiveAppBar() {
             variant="h6"
             noWrap
             component="a"
-            href="#app-bar-with-responsive-menu"
+            href="/"
             sx={{
               mr: 2,
               display: { xs: 'none', md: 'flex' },
@@ -128,7 +117,7 @@ function ResponsiveAppBar() {
               ))}
               {
                 cookies.is_admin === "true" ? 
-                <MenuItem key='Admin Console' onClick={() => {navigate('/admin')}}>
+                <MenuItem key='Admin Console' onClick={() => {navigate('/admin-console')}}>
                   <Typography sx={{ textAlign: 'center' }}>Admin Console</Typography>
                 </MenuItem>
                 : null
@@ -140,7 +129,7 @@ function ResponsiveAppBar() {
             variant="h5"
             noWrap
             component="a"
-            href="#app-bar-with-responsive-menu"
+            href="/"
             sx={{
               mr: 2,
               display: { xs: 'flex', md: 'none' },
@@ -168,15 +157,15 @@ function ResponsiveAppBar() {
               cookies.is_admin === "true" ?
               <Button
                 key="Admin Console"
-                onClick={() => {navigate('/admin')}}
+                onClick={() => {navigate('/admin-console')}}
                 sx={{ my: 2, color: 'white', display: 'block' }}
               >Admin Console</Button>
               : null
             }
           </Box>
           
-          {/* Show NotificationIcon only when user is logged in */}
-          {cookies.session_id && (
+          {/* Notification icon */}
+          {isAuthenticated && (
             <Box sx={{ mr: 2 }}>
               <NotificationIcon />
             </Box>
@@ -204,9 +193,15 @@ function ResponsiveAppBar() {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
             >
-              <MenuItem onClick={Logout}>
-                <Typography sx={{ textAlign: 'center' }} onClick={Logout}>Logout</Typography>
-              </MenuItem>
+              {isAuthenticated ? (
+                <MenuItem onClick={handleLogout}>
+                  <Typography sx={{ textAlign: 'center' }}>Logout</Typography>
+                </MenuItem>
+              ) : (
+                <MenuItem onClick={() => navigate('/login')}>
+                  <Typography sx={{ textAlign: 'center' }}>Login</Typography>
+                </MenuItem>
+              )}
             </Menu>
           </Box>
         </Toolbar>

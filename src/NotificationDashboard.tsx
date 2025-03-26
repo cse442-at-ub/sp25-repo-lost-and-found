@@ -28,6 +28,7 @@ import {
 import { useNavigate } from 'react-router';
 import LayoutDefault from './LayoutDefault';
 import { useCookies } from 'react-cookie';
+import { useAuth } from './components/AuthContext';
 
 // Notification interface
 interface Notification {
@@ -42,8 +43,9 @@ interface Notification {
 
 const NotificationDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [cookies] = useCookies(['session_id']);
+  const { isAuthenticated, loading } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState<boolean>(true);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -54,70 +56,84 @@ const NotificationDashboard: React.FC = () => {
     severity: "info"
   });
 
-  // Check if user is logged in, redirect if not
+  // Check if user is authenticated, redirect if not
   useEffect(() => {
-    if (!cookies.session_id) {
+    if (!loading && !isAuthenticated) {
+      setSnackbar({
+        open: true,
+        message: "Please log in to view notifications",
+        severity: "warning"
+      });
       navigate('/login');
-      return;
     }
-  }, [cookies.session_id, navigate]);
+  }, [isAuthenticated, loading, navigate]);
 
-  // Mock data fetch - replace with your API call
+  // Fetch notifications data
   useEffect(() => {
-    // Skip fetch if not logged in
-    if (!cookies.session_id) return;
+    // Skip fetch if not authenticated or still checking auth status
+    if (loading || !isAuthenticated) return;
     
-    // Simulating a fetch call
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        title: 'Item Match Found',
-        message: 'A black wallet matching your lost item description has been found. Check your claim page for more details.',
-        date: new Date(),
-        read: false,
-        type: 'success',
-        link: '/claim'
-      },
-      {
-        id: '2',
-        title: 'Claim Request Approved',
-        message: 'Your claim request for the lost laptop has been approved. Please visit the office to collect your item.',
-        date: new Date(Date.now() - 86400000), // 1 day ago
-        read: true,
-        type: 'success',
-        link: '/claim'
-      },
-      {
-        id: '3',
-        title: 'Item Description Update',
-        message: 'We need more information about your lost keys. Please update your report with additional details.',
-        date: new Date(Date.now() - 172800000), // 2 days ago
-        read: false,
-        type: 'warning',
-        link: '/report-lost-item'
-      },
-      {
-        id: '4',
-        title: 'New Lost Items Reported',
-        message: 'Several new items were reported lost in your area. Check if any match items you found.',
-        date: new Date(Date.now() - 259200000), // 3 days ago
-        read: false,
-        type: 'info',
-        link: '/report-found-item'
-      },
-      {
-        id: '5',
-        title: 'Account Security',
-        message: 'Your password was changed successfully. If you did not make this change, please contact support immediately.',
-        date: new Date(Date.now() - 345600000), // 4 days ago
-        read: true,
-        type: 'warning',
-        link: '/settings'
-      }
-    ];
+    // Simulate fetching notifications (replace with actual API call)
+    setLoadingNotifications(true);
+    
+    // Mock API call with timeout
+    const timeout = setTimeout(() => {
+      // Sample data
+      const mockNotifications: Notification[] = [
+        {
+          id: '1',
+          title: 'Item Match Found',
+          message: 'A black wallet matching your lost item description has been found. Check your claim page for more details.',
+          date: new Date(),
+          read: false,
+          type: 'success',
+          link: '/claim'
+        },
+        {
+          id: '2',
+          title: 'Claim Request Approved',
+          message: 'Your claim request for the lost laptop has been approved. Please visit the office to collect your item.',
+          date: new Date(Date.now() - 86400000), // 1 day ago
+          read: true,
+          type: 'success',
+          link: '/claim'
+        },
+        {
+          id: '3',
+          title: 'Item Description Update',
+          message: 'We need more information about your lost keys. Please update your report with additional details.',
+          date: new Date(Date.now() - 172800000), // 2 days ago
+          read: false,
+          type: 'warning',
+          link: '/report-lost-item'
+        },
+        {
+          id: '4',
+          title: 'New Lost Items Reported',
+          message: 'Several new items were reported lost in your area. Check if any match items you found.',
+          date: new Date(Date.now() - 259200000), // 3 days ago
+          read: false,
+          type: 'info',
+          link: '/report-found-item'
+        },
+        {
+          id: '5',
+          title: 'Account Security',
+          message: 'Your password was changed successfully. If you did not make this change, please contact support immediately.',
+          date: new Date(Date.now() - 345600000), // 4 days ago
+          read: true,
+          type: 'warning',
+          link: '/settings'
+        }
+      ];
 
-    setNotifications(mockNotifications);
-  }, []);
+      setNotifications(mockNotifications);
+      setLoadingNotifications(false);
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [isAuthenticated, loading]);
+
 
   const handleNotificationClick = (notification: Notification) => {
     // Mark as read
