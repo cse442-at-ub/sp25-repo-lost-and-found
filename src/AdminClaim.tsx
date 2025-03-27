@@ -1,57 +1,134 @@
-import React, { useEffect, useState } from 'react'
-import LayoutDefault from './LayoutDefault'
-import { Box, Button, Card, CardActionArea, CardContent, CardMedia, Grid, Typography } from '@mui/material'
+import React, { useEffect, useState } from "react";
+import LayoutDefault from "./LayoutDefault";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardMedia,
+  Grid,
+  Typography,
+} from "@mui/material";
 
-function AdminClaim() {   
+const API_URL =
+  "https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/adminClaim.php";
+const APPROVAL_URL =
+  "https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/setClaimApproved.php";
+const IMAGE_BASE_URL =
+  "https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/";
+
+function AdminClaim() {
+  const [claims, setClaims] = useState([]);
+
+  useEffect(() => {
+    fetch(API_URL)
+      .then((response) => response.json())
+      .then((data) => {
+        // Filter claims where 'approved' is NULL
+        const pendingClaims = data.filter((claim) => claim.approved === null);
+        setClaims(pendingClaims);
+      })
+      .catch((error) => console.error("Error fetching claims:", error));
+  }, []);
+
+  const handleApproval = (id, approved) => {
+    fetch(APPROVAL_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, approved }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Response:", data);
+        if (data.success) {
+          // Remove the claim from UI after approval/denial
+          setClaims((prevClaims) => prevClaims.filter((claim) => claim.claim_id !== id));
+        } else {
+          alert("Failed to update claim.");
+        }
+      })
+      .catch((error) => console.error("Error updating claim:", error));
+  };
+
   return (
-    <>
-        <LayoutDefault>
-        <Grid container spacing={3} style={{ padding: 20 }}>
-            {/* Lost Item Card */}
+    <LayoutDefault>
+      {claims.length == 0 && 
+        <Typography variant="body">There are no claims to be reviewed</Typography>
+      }
+      <Grid container spacing={3} style={{ padding: 20 }}>
+        {claims.map((claim) => (
+          <React.Fragment key={claim.id}>
+            {/* Item Card */}
             <Grid item xs={12} md={6} alignSelf={"center"}>
-                <Card>
-                <CardMedia>
-                    <img src="./admin-claim-item-example.png" // Replace with actual image path
-                    alt="Item"></img>
-                </CardMedia>
+              <Card>
+                <CardMedia
+                  component="img"
+                  src={
+                    claim.image
+                      ? `${IMAGE_BASE_URL}${encodeURI(claim.image)}`
+                      : `${IMAGE_BASE_URL}default-item.png`
+                  }
+                  alt="Item Image"
+                  style={{ width: "100%", height: "auto" }}
+                />
                 <CardContent>
-                    <Typography variant="h6">iPhone Pro 11</Typography>
-                    <Typography variant="body2">Found by Laura</Typography>
-                    <Typography variant="body2">
-                    iPhone Pro 11 that was found in Capen sitting near a bench
-                    </Typography>
-                    {/* Claim button doesn't make much sense here */}
-                    {/* <Button variant="contained" color="primary" style={{ marginRight: 10, marginTop: 10 }}>
-                    CLAIM
-                    </Button> */}
+                  <Typography variant="h6">
+                    {claim.item_name || "Unknown Item"}
+                  </Typography>
+                  <Typography variant="body2">
+                    Found by {claim.first_name} {claim.last_name}
+                  </Typography>
+                  <Typography variant="body2">
+                    {claim.description || `Found at ${claim.location_found || "Unknown location"}`}
+                  </Typography>
                 </CardContent>
-                </Card>
+              </Card>
             </Grid>
-            
-            {/* Claim Card */}
+
+            {/* Claimant Card */}
             <Grid item xs={12} md={6} alignSelf={"center"}>
-                <Card>
-                <CardMedia>
-                    <img src="./admin-claim-person-example.png" // Replace with actual image path
-                    alt="Claimant"></img>
-                </CardMedia>
+              <Card>
                 <CardContent>
-                    <Typography variant="h6">Claim</Typography>
-                    <Typography variant="body2">Name: Emily</Typography>
-                    <Typography variant="body2">Person #: asdfasdf</Typography>
-                    <Button variant="contained" style={{ backgroundColor: "green", color: "white", marginRight: 10, marginTop: 10 }}>
+                  <Typography variant="h6">Claim</Typography>
+                  <Typography variant="body2">
+                    Name: {claim.first_name} {claim.last_name}
+                  </Typography>
+                  <Typography variant="body2">
+                    Email: {claim.email || "N/A"}
+                  </Typography>
+                  <Typography variant="body2">
+                    Phone: {claim.phone || "N/A"}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    style={{
+                      backgroundColor: "green",
+                      color: "white",
+                      marginRight: 10,
+                      marginTop: 10,
+                    }}
+                    onClick={() => handleApproval(claim.claim_id, 1)}
+                  >
                     APPROVE
-                    </Button>
-                    <Button variant="contained" style={{ backgroundColor: "red", color: "white", marginTop: 10 }}>
+                  </Button>
+                  <Button
+                    variant="contained"
+                    style={{
+                      backgroundColor: "red",
+                      color: "white",
+                      marginTop: 10,
+                    }}
+                    onClick={() => handleApproval(claim.claim_id, 0)}
+                  >
                     DENY
-                    </Button>
+                  </Button>
                 </CardContent>
-                </Card>
+              </Card>
             </Grid>
-            </Grid>
-        </LayoutDefault>
-    </>
-  )
+          </React.Fragment>
+        ))}
+      </Grid>
+    </LayoutDefault>
+  );
 }
 
-export default AdminClaim
+export default AdminClaim;
