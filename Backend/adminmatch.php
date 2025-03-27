@@ -21,8 +21,9 @@ if ($conn->connect_error) {
 // Check if the request method is POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the input data
-    $lost_item_id = isset($_POST['lost_item_id']) ? intval($_POST['lost_item_id']) : null;
-    $found_item_id = isset($_POST['found_item_id']) ? intval($_POST['found_item_id']) : null;
+    $input = json_decode(file_get_contents('php://input'), true);
+    $lost_item_id = isset($input['lost_item_id']) ? intval($input['lost_item_id']) : null;
+    $found_item_id = isset($input['found_item_id']) ? intval($input['found_item_id']) : null;
 
     // Validate input
     if ($lost_item_id === null || $found_item_id === null) {
