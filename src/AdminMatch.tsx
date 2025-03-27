@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -21,7 +20,6 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-
 import { Search, CheckCircle, Pending, Cancel } from '@mui/icons-material';
 import LayoutDefault from './LayoutDefault';
 
@@ -30,79 +28,99 @@ interface Item {
   name: string;
   type: 'Lost' | 'Found';
   reportedBy: string;
-  status: 'Matched' | 'Pending Confirmation' | 'No Match';
   date: string;
   image: string;
   description: string;
   location: string;
+  status: 'Matched' | 'Pending Confirmation' | 'No Match'; // Added status field
+  actions: string; // Added actions field
 }
 
-const sampleItems: Item[] = [
-  { id: 1, name: 'Black Wallet', type: 'Lost', reportedBy: 'Alice', status: 'Pending Confirmation', date: '2025-03-10', image: '/wallet.jpg', description: 'Black leather wallet with credit cards.', location: 'Main Street Park' },
-  { id: 2, name: 'iPhone 12', type: 'Found', reportedBy: 'Bob', status: 'Matched', date: '2025-03-09', image: '/iphone.jpg', description: 'White iPhone 12 with a clear case.', location: 'City Library' },
-  { id: 3, name: 'Car Keys', type: 'Lost', reportedBy: 'Charlie', status: 'Pending Confirmation', date: '2025-03-11', image: '/keys.jpg', description: 'Set of car keys with a blue keychain.', location: 'Shopping Mall' },
-  { id: 4, name: 'Laptop Bag', type: 'Found', reportedBy: 'David', status: 'Matched', date: '2025-03-08', image: '/laptopbag.jpg', description: 'Black laptop bag with a Dell laptop.', location: 'Train Station' },
-  { id: 5, name: 'Blue Backpack', type: 'Lost', reportedBy: 'Emma', status: 'Pending Confirmation', date: '2025-03-07', image: '/backpack.jpg', description: 'Blue backpack with books and a water bottle.', location: 'School Campus' },
-  { id: 6, name: 'Smartwatch', type: 'Found', reportedBy: 'Frank', status: 'No Match', date: '2025-03-06', image: '/smartwatch.jpg', description: 'Silver smartwatch with a black band.', location: 'Fitness Center' },
-  { id: 7, name: 'Blue Backpack', type: 'Lost', reportedBy: 'Emma', status: 'Pending Confirmation', date: '2025-03-07', image: '/backpack.jpg', description: 'Blue backpack with books and a water bottle.', location: 'School Campus' },
-  { id: 8, name: 'Smartwatch', type: 'Found', reportedBy: 'Frank', status: 'No Match', date: '2025-03-06', image: '/smartwatch.jpg', description: 'Silver smartwatch with a black band.', location: 'Fitness Center' },
-  { id: 9, name: 'Black Wallet', type: 'Lost', reportedBy: 'Alice', status: 'Pending Confirmation', date: '2025-03-10', image: '/wallet.jpg', description: 'Black leather wallet with credit cards.', location: 'Main Street Park' },
-  { id: 10, name: 'iPhone 12', type: 'Found', reportedBy: 'Bob', status: 'Matched', date: '2025-03-09', image: '/iphone.jpg', description: 'White iPhone 12 with a clear case.', location: 'City Library' },
-  { id: 11, name: 'Car Keys', type: 'Lost', reportedBy: 'Charlie', status: 'Pending Confirmation', date: '2025-03-11', image: '/keys.jpg', description: 'Set of car keys with a blue keychain.', location: 'Shopping Mall' },
-  { id: 12, name: 'Laptop Bag', type: 'Found', reportedBy: 'David', status: 'Matched', date: '2025-03-08', image: '/laptopbag.jpg', description: 'Black laptop bag with a Dell laptop.', location: 'Train Station' },
-  { id: 13, name: 'Blue Backpack', type: 'Lost', reportedBy: 'Emma', status: 'Pending Confirmation', date: '2025-03-07', image: '/backpack.jpg', description: 'Blue backpack with books and a water bottle.', location: 'School Campus' },
-  { id: 14, name: 'Smartwatch', type: 'Found', reportedBy: 'Frank', status: 'No Match', date: '2025-03-06', image: '/smartwatch.jpg', description: 'Silver smartwatch with a black band.', location: 'Fitness Center' },
-  { id: 15, name: 'Blue Backpack', type: 'Lost', reportedBy: 'Emma', status: 'Pending Confirmation', date: '2025-03-07', image: '/backpack.jpg', description: 'Blue backpack with books and a water bottle.', location: 'School Campus' },
-  { id: 16, name: 'Smartwatch', type: 'Found', reportedBy: 'Frank', status: 'No Match', date: '2025-03-06', image: '/smartwatch.jpg', description: 'Silver smartwatch with a black band.', location: 'Fitness Center' },
-];
-
-
-function AdminMatch() {
-  const [items, setItems] = useState<Item[]>(sampleItems);
+const AdminMatch = () => {
+  const [items, setItems] = useState<Item[]>([]);
   const [search, setSearch] = useState('');
   const [selectedLost, setSelectedLost] = useState<number | null>(null);
   const [selectedFound, setSelectedFound] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [successful, setSuccessful] = useState("");
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await fetch('./Backend/getItems.php'); // Fetch items from the backend
+  
+        const data = await response.json();
+        setItems(data);
+      } catch (error) {
+        console.error("Error fetching items:", error);
+      }
+    };
+
+    fetchItems();
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value.toLowerCase());
   };
 
-  const handleStatusChange = (id: number, newStatus: 'Matched' | 'Pending Confirmation' | 'No Match') => {
+  const handleMatch = async () => {
+    if (selectedLost && selectedFound) {
+      try {
+        const response = await fetch("./Backend/adminmatch.php", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lost_item_id: selectedLost,
+            found_item_id: selectedFound,
+          }),
+        });
 
-    setItems(items.map(item => (item.id === id ? { ...item, status: newStatus } : item)));
-    
-  };
+        const result = await response.json();
 
-  const handleMatch = () => {
-    // Logic to save matched items in the database goes here
-    setOpenDialog(true);
+        if (result.success) {
+          setOpenDialog(true);
+          setSuccessful("success");
+          // Update the status of matched items
+          setItems(prevItems => prevItems.map(item => {
+            if (item.id === selectedLost || item.id === selectedFound) {
+              return { ...item, status: 'Matched' }; // Update status to Matched
+            }
+            return item;
+          }));
+        } else {
+          setSuccessful("error");
+          alert(result.error);
+        }
+      } catch (error) {
+        console.error("There was an error matching the items!", error);
+        setSuccessful("error");
+        alert("An error occurred while matching the items.");
+      }
+    } else {
+      alert("Please select both a lost item and a found item.");
+    }
   };
 
   const handleDialogClose = () => {
     setOpenDialog(false);
   };
 
-  const filteredItems = items.filter(
-    item => item.name.toLowerCase().includes(search) || item.reportedBy.toLowerCase().includes(search)
+  const filteredItems = items.filter(item =>
+    item.name.toLowerCase().includes(search) || item.reportedBy.toLowerCase().includes(search)
   );
 
   const lostItems = filteredItems.filter(item => item.type === 'Lost');
   const foundItems = filteredItems.filter(item => item.type === 'Found');
 
   const getStatusIcon = (status: string) => {
-
     switch (status) {
-      case 'Matched':
-        return <CheckCircle style={{ color: 'green' }} />;
-      case 'Pending Confirmation':
-        return <Pending style={{ color: 'goldenrod' }} />;
-      case 'No Match':
-        return <Cancel style={{ color: 'red' }} />;
-    default:
-      return null;
+      case 'Matched': return <CheckCircle style={{ color: 'green' }} />;
+      case 'Pending Confirmation': return <Pending style={{ color: 'goldenrod' }} />;
+      case 'No Match': return <Cancel style={{ color: 'red' }} />;
+      default: return null;
     }
-    
   };
 
   return (
@@ -159,8 +177,11 @@ function AdminMatch() {
                       <TableCell>{getStatusIcon(item.status)}</TableCell>
                       <TableCell>
                         <Select
-                        value={item.status}
-                        onChange={(e) => handleStatusChange(item.id, e.target.value as 'Matched' | 'Pending Confirmation' | 'No Match')}
+                          value={item.status}
+                          onChange={(e) => {
+                            const newStatus = e.target.value as 'Matched' | 'Pending Confirmation' | 'No Match';
+                            setItems(prevItems => prevItems.map(i => i.id === item.id ? { ...i, status: newStatus } : i));
+                          }}
                         >
                           <MenuItem value="Matched">✅ Matched</MenuItem>
                           <MenuItem value="Pending Confirmation">⏳ Pending</MenuItem>
@@ -209,8 +230,11 @@ function AdminMatch() {
                       <TableCell>{getStatusIcon(item.status)}</TableCell>
                       <TableCell>
                         <Select
-                        value={item.status}
-                        onChange={(e) => handleStatusChange(item.id, e.target.value as 'Matched' | 'Pending Confirmation' | 'No Match')}
+                          value={item.status}
+                          onChange={(e) => {
+                            const newStatus = e.target.value as 'Matched' | 'Pending Confirmation' | 'No Match';
+                            setItems(prevItems => prevItems.map(i => i.id === item.id ? { ...i, status: newStatus } : i));
+                          }}
                         >
                           <MenuItem value="Matched">✅ Matched</MenuItem>
                           <MenuItem value="Pending Confirmation">⏳ Pending</MenuItem>
@@ -248,11 +272,20 @@ function AdminMatch() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {successful === "success" && 
+          <Typography color="success" align="center" sx={{ marginTop: 2 }}>
+            Items matched successfully!
+          </Typography>
+        }
+        {successful === "error" && 
+          <Typography color="error" align="center" sx={{ marginTop: 2 }}>
+            There was an error matching the items.
+          </Typography>
+        }
       </Paper>
     </LayoutDefault>
   );
 }
 
 export default AdminMatch;
-
-
