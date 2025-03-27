@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-
 import {
   Table,
   TableBody,
@@ -21,7 +20,6 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-
 import { Search, CheckCircle, Pending, Cancel } from '@mui/icons-material';
 import LayoutDefault from './LayoutDefault';
 
@@ -56,27 +54,55 @@ const sampleItems: Item[] = [
   { id: 16, name: 'Smartwatch', type: 'Found', reportedBy: 'Frank', status: 'No Match', date: '2025-03-06', image: '/smartwatch.jpg', description: 'Silver smartwatch with a black band.', location: 'Fitness Center' },
 ];
 
-
 function AdminMatch() {
   const [items, setItems] = useState<Item[]>(sampleItems);
   const [search, setSearch] = useState('');
   const [selectedLost, setSelectedLost] = useState<number | null>(null);
   const [selectedFound, setSelectedFound] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [successful, setSuccessful] = useState(""); // State for success message
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value.toLowerCase());
   };
 
   const handleStatusChange = (id: number, newStatus: 'Matched' | 'Pending Confirmation' | 'No Match') => {
-
     setItems(items.map(item => (item.id === id ? { ...item, status: newStatus } : item)));
-    
   };
 
-  const handleMatch = () => {
-    // Logic to save matched items in the database goes here
-    setOpenDialog(true);
+  const handleMatch = async () => {
+    if (selectedLost && selectedFound) {
+      try {
+        const response = await fetch("./Backend/adminmatch.php", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lost_item_id: selectedLost,
+            found_item_id: selectedFound,
+          }),
+        });
+
+        const result = await response.json();
+
+        // Handle success response
+        if (result.success) {
+          setOpenDialog(true);
+          setSuccessful("success"); // Set success message
+        } else {
+          // Handle error response
+          setSuccessful("error"); // Set error message
+          alert(result.error);
+        }
+      } catch (error) {
+        console.error("There was an error matching the items!", error);
+        setSuccessful("error"); // Set error message
+        alert("An error occurred while matching the items.");
+      }
+    } else {
+      alert("Please select both a lost item and a found item.");
+    }
   };
 
   const handleDialogClose = () => {
@@ -91,7 +117,6 @@ function AdminMatch() {
   const foundItems = filteredItems.filter(item => item.type === 'Found');
 
   const getStatusIcon = (status: string) => {
-
     switch (status) {
       case 'Matched':
         return <CheckCircle style={{ color: 'green' }} />;
@@ -99,10 +124,9 @@ function AdminMatch() {
         return <Pending style={{ color: 'goldenrod' }} />;
       case 'No Match':
         return <Cancel style={{ color: 'red' }} />;
-    default:
-      return null;
+      default:
+        return null;
     }
-    
   };
 
   return (
@@ -159,8 +183,8 @@ function AdminMatch() {
                       <TableCell>{getStatusIcon(item.status)}</TableCell>
                       <TableCell>
                         <Select
-                        value={item.status}
-                        onChange={(e) => handleStatusChange(item.id, e.target.value as 'Matched' | 'Pending Confirmation' | 'No Match')}
+                          value={item.status}
+                          onChange={(e) => handleStatusChange(item.id, e.target.value as 'Matched' | 'Pending Confirmation' | 'No Match')}
                         >
                           <MenuItem value="Matched">✅ Matched</MenuItem>
                           <MenuItem value="Pending Confirmation">⏳ Pending</MenuItem>
@@ -209,8 +233,8 @@ function AdminMatch() {
                       <TableCell>{getStatusIcon(item.status)}</TableCell>
                       <TableCell>
                         <Select
-                        value={item.status}
-                        onChange={(e) => handleStatusChange(item.id, e.target.value as 'Matched' | 'Pending Confirmation' | 'No Match')}
+                          value={item.status}
+                          onChange={(e) => handleStatusChange(item.id, e.target.value as 'Matched' | 'Pending Confirmation' | 'No Match')}
                         >
                           <MenuItem value="Matched">✅ Matched</MenuItem>
                           <MenuItem value="Pending Confirmation">⏳ Pending</MenuItem>
@@ -248,11 +272,21 @@ function AdminMatch() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Success/Error Message Display */}
+        {successful === "success" && 
+          <Typography color="success" align="center" sx={{ marginTop: 2 }}>
+            Items matched successfully!
+          </Typography>
+        }
+        {successful === "error" && 
+          <Typography color="error" align="center" sx={{ marginTop: 2 }}>
+            There was an error matching the items.
+          </Typography>
+        }
       </Paper>
     </LayoutDefault>
   );
 }
 
 export default AdminMatch;
-
-
