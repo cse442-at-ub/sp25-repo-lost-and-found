@@ -21,10 +21,13 @@ if ($conn->connect_error) {
 // Query to select all columns from claims, users, and the corresponding items table
 $sql = "
     SELECT 
+        claims.id AS claim_id, 
         claims.*, 
         users.*, 
+        lost_items.id AS lost_item_id, 
+        found_items.id AS found_item_id, 
         lost_items.*, 
-        found_items.* 
+        found_items.*
     FROM claims
     LEFT JOIN users ON claims.user_id = users.user_id
     LEFT JOIN lost_items ON claims.claim_type = 'lost' AND claims.item_id = lost_items.id
