@@ -48,6 +48,7 @@ const AdminMatch = () => {
     const fetchItems = async () => {
       try {
         const response = await fetch('./Backend/getItems.php'); // Fetch items from the backend
+  
         const data = await response.json();
         setItems(data);
       } catch (error) {
