@@ -17,7 +17,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
 } from '@mui/material';
 import { Search, CheckCircle, Pending, Cancel } from '@mui/icons-material';
@@ -29,7 +28,7 @@ interface Item {
   type: 'Lost' | 'Found';
   reportedBy: string;
   date: string;
-  image: string;
+  image: string; // This should be the relative path from the database
   description: string;
   location: string;
   status: 'Matched' | 'Pending Confirmation' | 'No Match'; // Added status field
@@ -42,13 +41,13 @@ const AdminMatch = () => {
   const [selectedLost, setSelectedLost] = useState<number | null>(null);
   const [selectedFound, setSelectedFound] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null); // State for selected image
   const [successful, setSuccessful] = useState("");
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
         const response = await fetch('./Backend/getItems.php'); // Fetch items from the backend
-  
         const data = await response.json();
         setItems(data);
       } catch (error) {
@@ -105,6 +104,7 @@ const AdminMatch = () => {
 
   const handleDialogClose = () => {
     setOpenDialog(false);
+    setSelectedImage(null); // Reset selected image when closing dialog
   };
 
   const filteredItems = items.filter(item =>
@@ -168,7 +168,11 @@ const AdminMatch = () => {
                           onChange={() => setSelectedLost(item.id === selectedLost ? null : item.id)}
                         />
                       </TableCell>
-                      <TableCell><img src={item.image} alt={item.name} width="50" height="50" style={{ borderRadius: '8px' }} /></TableCell>
+                      <TableCell>
+                        <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
+                          View Image
+                        </Button>
+                      </TableCell>
                       <TableCell>{item.name}</TableCell>
                       <TableCell>{item.reportedBy}</TableCell>
                       <TableCell>{item.date}</TableCell>
@@ -221,7 +225,11 @@ const AdminMatch = () => {
                           onChange={() => setSelectedFound(item.id === selectedFound ? null : item.id)}
                         />
                       </TableCell>
-                      <TableCell><img src={item.image} alt={item.name} width="50" height="50" style={{ borderRadius: '8px' }} /></TableCell>
+                      <TableCell>
+                        <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
+                          View Image
+                        </Button>
+                      </TableCell>
                       <TableCell>{item.name}</TableCell>
                       <TableCell>{item.reportedBy}</TableCell>
                       <TableCell>{item.date}</TableCell>
@@ -260,15 +268,13 @@ const AdminMatch = () => {
         </Button>
 
         <Dialog open={openDialog} onClose={handleDialogClose}>
-          <DialogTitle>Items Matched</DialogTitle>
+          <DialogTitle>Image Preview</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              The selected lost and found items have been matched and stored in the database.
-            </DialogContentText>
+            {selectedImage && <img src={`./Backend/${selectedImage}`} alt="Preview" style={{ width: '100%', height: 'auto' }} />}
           </DialogContent>
           <DialogActions>
             <Button onClick={handleDialogClose} color="primary">
-              Okay
+              Close
             </Button>
           </DialogActions>
         </Dialog>
