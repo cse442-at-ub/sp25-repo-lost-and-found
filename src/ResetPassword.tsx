@@ -6,7 +6,7 @@ import { useLocation } from "react-router";
 const ResetPassword = (e: any) => {
   const location = useLocation();
   const [email, setEmail] = useState(location.state.email);
-  const [otp, setOtp] = useState("000000");
+  const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [resp, setResp] = useState({okay: false, msg: null});
@@ -29,7 +29,7 @@ const ResetPassword = (e: any) => {
     event.preventDefault();
 
     try {
-      const response = await fetch('./Backend/src/resetPassword.php', {
+      const response = await fetch('./Backend/resetPassword.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,12 +61,12 @@ const ResetPassword = (e: any) => {
                   defaultValue={email}
                   onChange={(e) => {setEmail(e.target.value);}}
                   sx={{m: 1}}/>
-              {/* <TextField fullWidth required id="otp" label="OTP Token"
+              <TextField fullWidth required id="otp" label="OTP Token"
                   name="otp" autoComplete="otp" autoFocus
                   onChange={(e) => {setOtp(e.target.value);}}
                   error={ ! /\d{6}/.test(otp) }
                   helperText="OTP token is 6 digits"
-                  sx={{m: 1}}/> */}
+                  sx={{m: 1}}/>
               <TextField fullWidth required id="password" label="Password"
                   name="password" autoComplete="password" type="password"
                   onChange={(e) => {setPassword(e.target.value);}}
@@ -86,7 +86,7 @@ const ResetPassword = (e: any) => {
                   onChange={(e) => {setConfirm(e.target.value);}}
                   error={confirm !== password}
                   sx={{m: 1}}/>
-              <Typography hidden={resp.msg===null} sx={{color: resp.okay?"#000000":"#cc0000"}}>{resp.msg || ""}</Typography>
+              <Typography hidden={resp.msg===null} sx={{color: "#cc0000"}}>{resp.msg || ""}</Typography>
               <Button fullWidth variant="contained" type="submit"
                   disabled={!passwdRules.every((rule) => rule.cond(password)) || confirm !== password || ! /\d{6}/.test(otp)}
                   sx={{m: 1}}>Set Password</Button>

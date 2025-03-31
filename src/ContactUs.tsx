@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button, TextField, Box, Container, Card, CardContent, Typography, Grid2 as Grid, ListItem, List, ListItemIcon, ListItemText } from "@mui/material";
 import { Email, Phone, Schedule } from "@mui/icons-material";
 import LayoutDefault from "./LayoutDefault";
-import { Link, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 
 const ContactUs = (e: any) => {
   // const navigate = useNavigate();
@@ -11,6 +11,7 @@ const ContactUs = (e: any) => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [resp, setResp] = useState({okay: false, msg: null});
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -31,6 +32,7 @@ const ContactUs = (e: any) => {
       const j = await response.json();
       console.log(j);
       setResp(j);
+      if (j.okay) navigate('/');
     } catch (error) {
       console.error('Error during posting message:', error);
     }
