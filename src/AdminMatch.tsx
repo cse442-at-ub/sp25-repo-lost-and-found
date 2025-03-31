@@ -32,7 +32,6 @@ interface Item {
   description: string;
   location: string;
   status: 'Matched' | 'Pending Confirmation' | 'No Match'; // Added status field
-  actions: string; // Added actions field
 }
 
 const AdminMatch = () => {
@@ -172,6 +171,14 @@ const AdminMatch = () => {
                         <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
                           View Image
                         </Button>
+                        <Button 
+                          href={`./Backend/${item.image}`} 
+                          download 
+                          sx={{ marginLeft: 1 }} 
+                          variant="outlined"
+                        >
+                          Download
+                        </Button>
                       </TableCell>
                       <TableCell>{item.name}</TableCell>
                       <TableCell>{item.reportedBy}</TableCell>
@@ -228,6 +235,14 @@ const AdminMatch = () => {
                       <TableCell>
                         <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
                           View Image
+                        </Button>
+                        <Button 
+                          href={`./Backend/${item.image}`} 
+                          download 
+                          sx={{ marginLeft: 1 }} 
+                          variant="outlined"
+                        >
+                          Download
                         </Button>
                       </TableCell>
                       <TableCell>{item.name}</TableCell>
