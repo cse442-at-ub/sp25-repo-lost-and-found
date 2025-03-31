@@ -1,14 +1,10 @@
 <?php
 // Database configuration
-$host = 'localhost'; // e.g., localhost
-$dbname = 'cse442_2025_spring_team_s_db';
-$username = 'jxboulwa';
-$password = '50456062';
+require_once 'db.php';
 
 try {
   // Establish PDO connection
-  $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  $pdo = getDbConnection();
 
   header('Content-Type: application/json');
 
@@ -22,6 +18,13 @@ try {
       $email = $data['email'];
     } else {
       echo '{"okay": false, "msg": "Email required"}';
+      return;
+    }
+
+    if (isset($data['otp'])) {
+      $otp = $data['otp'];
+    } else {
+      echo '{"okay": false, "msg": "OTP Token required"}';
       return;
     }
 
@@ -44,17 +47,34 @@ try {
       return;
     }
 
-    $stmt = $pdo->prepare('UPDATE users SET password = :password
-        WHERE email = :email');
+    $stmt = $pdo->prepare('SELECT id, token FROM otp_tokens
+        WHERE email = :email and used = FALSE
+        and created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)');
     $stmt->bindValue(':email', $email, PDO::PARAM_STR);
-    $stmt->bindValue(':password', password_hash($password, PASSWORD_BCRYPT), PDO::PARAM_STR);
     $stmt->execute();
 
-    if ($stmt->rowCount() > 0) {
-      echo '{"okay": true, "msg": "Password updated"}';
-    } else {
-      echo '{"okay": false, "msg": "Failed to update password"}';
+    while (false !== ($row = $stmt->fetch())) {
+      if (password_verify($otp, $row['token'])) {
+        $stmt = $pdo->prepare('UPDATE otp_tokens SET used = TRUE
+            WHERE id = :id');
+        $stmt->bindValue(':id', $row['id'], PDO::PARAM_INT);
+        $stmt->execute();
+
+        $stmt = $pdo->prepare('UPDATE users SET password = :password
+            WHERE email = :email');
+        $stmt->bindValue(':email', $email, PDO::PARAM_STR);
+        $stmt->bindValue(':password', password_hash($password, PASSWORD_BCRYPT), PDO::PARAM_STR);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+          echo '{"okay": true, "msg": "Password updated"}';
+        } else {
+          echo '{"okay": false, "msg": "Failed to update password"}';
+        }
+        return;
+      }
     }
+    echo '{"okay": false, "msg": "Invalid email or OTP token"}';
   }
 } catch (PDOException $e) {
   // Handle database errors
