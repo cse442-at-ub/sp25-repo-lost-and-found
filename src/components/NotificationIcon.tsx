@@ -100,12 +100,7 @@ const NotificationIcon: React.FC = () => {
     
     handleCloseMenu();
     
-    // Navigate based on the notification link
-    if (notification.link) {
-      navigate(notification.link);
-    } else {
-      navigate(`/notification-detail/${notification.id}`);
-    }
+    navigate(`/notification-detail/${notification.id}`);
   };
 
   const handleDeleteNotification = async (id: string, event: React.MouseEvent) => {

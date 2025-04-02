@@ -12,13 +12,17 @@ import {
   Alert,
   Snackbar,
   Paper,
-  Divider
+  Divider,
+  InputAdornment,
+  IconButton
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+// No need to import CSS file
 import LayoutDefault from './LayoutDefault';
 import { useNavigate } from 'react-router';
 import { useAuth } from './components/AuthContext';
 
-
+// Interface for found items
 interface FoundItem {
   id: number;
   item_name: string;
@@ -62,6 +66,7 @@ function ClaimPage() {
         proofOfOwnership: '',
         additionalDetails: ''
     });
+    const [searchTerm, setSearchTerm] = useState('');
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: '',
@@ -97,11 +102,22 @@ function ClaimPage() {
                     throw new Error(`Failed to fetch items (Status: ${response.status})`);
                 }
                 
-                const data = await response.json();
+                // Get the response text first to check if it's valid JSON
+                const responseText = await response.text();
+                
+                // Try to parse as JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Response is not valid JSON:', responseText);
+                    throw new Error('Server returned an invalid response');
+                }
+                
                 if (data.success) {
                     setFoundItems(data.items || []);
                 } else {
-                    setError(data.message || 'Unknown error occurred');
+                    throw new Error(data.message || 'Unknown error occurred');
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -163,7 +179,10 @@ function ClaimPage() {
         }
 
         try {
-            const response = await fetch('./Backend/submitClaim.php', {
+            // Show loading indicator
+            setLoading(true);
+            
+            const response = await fetch('./Backend/submitClaims.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -177,7 +196,22 @@ function ClaimPage() {
                 credentials: 'include'
             });
             
-            const data = await response.json();
+            // Check if response is ok
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+            
+            // Get the response text first to check if it's actually JSON
+            const responseText = await response.text();
+            
+            // Try to parse as JSON
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Response is not valid JSON:', responseText);
+                throw new Error('Server returned an invalid response. Please check server logs.');
+            }
             
             if (data.success) {
                 setSnackbar({
@@ -203,11 +237,30 @@ function ClaimPage() {
             console.error('Error submitting claim:', err);
             setSnackbar({
                 open: true,
-                message: 'An error occurred while submitting your claim',
+                message: err instanceof Error ? err.message : 'An unexpected error occurred while submitting your claim',
                 severity: 'error'
             });
+        } finally {
+            // Hide loading indicator
+            setLoading(false);
         }
     };
+
+    // Handle search input change
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(e.target.value);
+    };
+    
+    // Filter items based on search term
+    const filteredItems = foundItems.filter(item => {
+        const searchTermLower = searchTerm.toLowerCase();
+        return (
+            (item.item_name && item.item_name.toLowerCase().includes(searchTermLower)) ||
+            (item.location_found && item.location_found.toLowerCase().includes(searchTermLower)) ||
+            (item.description && item.description.toLowerCase().includes(searchTermLower)) ||
+            (item.category && item.category.toLowerCase().includes(searchTermLower))
+        );
+    });
 
     // Handle snackbar close
     const handleCloseSnackbar = () => {
@@ -295,6 +348,39 @@ function ClaimPage() {
                 </Typography>
 
                 <Divider sx={{ my: 3 }} />
+                
+                {/* Search Bar */}
+                <Paper 
+                    elevation={2} 
+                    sx={{ 
+                        p: 2, 
+                        mb: 4, 
+                        borderRadius: 2,
+                        backgroundColor: '#f9f9f9'
+                    }}
+                >
+                    <TextField
+                        fullWidth
+                        placeholder="Search by item name, location, description..."
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        variant="outlined"
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon color="action" />
+                                </InputAdornment>
+                            ),
+                            sx: { 
+                                borderRadius: 2,
+                                bgcolor: 'white',
+                                '&:hover': {
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                                }
+                            }
+                        }}
+                    />
+                </Paper>
 
                 {/* If no items found */}
                 {foundItems.length === 0 && (
@@ -302,7 +388,33 @@ function ClaimPage() {
                         No found items are currently available for claiming.
                     </Alert>
                 )}
+                
+                {/* If no search results */}
+                {foundItems.length > 0 && filteredItems.length === 0 && (
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                        No items match your search criteria. Try different keywords.
+                    </Alert>
+                )}
 
+                {/* Search result counter */}
+                {!selectedItem && foundItems.length > 0 && (
+                    <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Showing {filteredItems.length} of {foundItems.length} items
+                        </Typography>
+                        {searchTerm && (
+                            <Button 
+                                size="small" 
+                                variant="text" 
+                                onClick={() => setSearchTerm('')}
+                                sx={{ ml: 2 }}
+                            >
+                                Clear Search
+                            </Button>
+                        )}
+                    </Box>
+                )}
+                
                 {/* Two-column layout when an item is selected */}
                 {selectedItem ? (
                     <Grid container spacing={4}>
@@ -478,7 +590,7 @@ function ClaimPage() {
                 ) : (
                     /* Grid of items to select from */
                     <Grid container spacing={3}>
-                        {foundItems.map((item) => (
+                        {filteredItems.map((item) => (
                             <Grid item key={item.id} xs={12} sm={6} md={4}>
                                 <Card 
                                     sx={{ 
