@@ -1,8 +1,19 @@
 <?php
+// Start session to get user ID
+session_start();
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode(["success" => false, "message" => "User not logged in"]);
+    exit;
+}
+
+// Get the user ID from the session
+$userId = $_SESSION['user_id'];
 
 $servername = "localhost";
 $username = "dinalben"; // Replace with your MySQL username
@@ -38,13 +49,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         move_uploaded_file($_FILES['image']['tmp_name'], $imagePath);
     }
     
-    $stmt = $conn->prepare("INSERT INTO found_items (item_name, category, date_found, location_found, description, first_name, last_name, email, phone, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssssssss", $itemName, $category, $dateFound, $location, $description, $firstName, $lastName, $email, $phone, $imagePath);
+    // Update SQL query to include user_id column
+    $stmt = $conn->prepare("INSERT INTO found_items (item_name, category, date_found, location_found, description, first_name, last_name, email, phone, image, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssssssssi", $itemName, $category, $dateFound, $location, $description, $firstName, $lastName, $email, $phone, $imagePath, $userId);
     
     if ($stmt->execute()) {
         echo json_encode(["success" => true, "message" => "Found item reported successfully!"]);
     } else {
-        echo json_encode(["success" => false, "message" => "Failed to report found item."]);
+        echo json_encode(["success" => false, "message" => "Failed to report found item: " . $stmt->error]);
     }
     
     $stmt->close();

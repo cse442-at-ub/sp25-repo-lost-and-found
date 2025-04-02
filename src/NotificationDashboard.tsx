@@ -15,7 +15,8 @@ import {
   Grid,
   Button,
   Snackbar,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, 
@@ -27,25 +28,12 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router';
 import LayoutDefault from './LayoutDefault';
-import { useCookies } from 'react-cookie';
 import { useAuth } from './components/AuthContext';
-
-// Notification interface
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  date: Date;
-  read: boolean;
-  type: 'success' | 'warning' | 'info';
-  link?: string;
-}
+import { useNotifications } from './components/NotificationService';
 
 const NotificationDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loadingNotifications, setLoadingNotifications] = useState<boolean>(true);
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -56,9 +44,22 @@ const NotificationDashboard: React.FC = () => {
     severity: "info"
   });
 
+  // Use our custom notifications hook
+  const { 
+    loading, 
+    error, 
+    notifications, 
+    unreadCount, 
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    deleteReadNotifications
+  } = useNotifications();
+
   // Check if user is authenticated, redirect if not
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       setSnackbar({
         open: true,
         message: "Please log in to view notifications",
@@ -66,127 +67,53 @@ const NotificationDashboard: React.FC = () => {
       });
       navigate('/login');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // Fetch notifications data
   useEffect(() => {
-    // Skip fetch if not authenticated or still checking auth status
-    if (loading || !isAuthenticated) return;
-    
-    // Simulate fetching notifications (replace with actual API call)
-    setLoadingNotifications(true);
-    
-    // Mock API call with timeout
-    const timeout = setTimeout(() => {
-      // Sample data
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          title: 'Item Match Found',
-          message: 'A black wallet matching your lost item description has been found. Check your claim page for more details.',
-          date: new Date(),
-          read: false,
-          type: 'success',
-          link: '/claim'
-        },
-        {
-          id: '2',
-          title: 'Claim Request Approved',
-          message: 'Your claim request for the lost laptop has been approved. Please visit the office to collect your item.',
-          date: new Date(Date.now() - 86400000), // 1 day ago
-          read: true,
-          type: 'success',
-          link: '/claim'
-        },
-        {
-          id: '3',
-          title: 'Item Description Update',
-          message: 'We need more information about your lost keys. Please update your report with additional details.',
-          date: new Date(Date.now() - 172800000), // 2 days ago
-          read: false,
-          type: 'warning',
-          link: '/report-lost-item'
-        },
-        {
-          id: '4',
-          title: 'New Lost Items Reported',
-          message: 'Several new items were reported lost in your area. Check if any match items you found.',
-          date: new Date(Date.now() - 259200000), // 3 days ago
-          read: false,
-          type: 'info',
-          link: '/report-found-item'
-        },
-        {
-          id: '5',
-          title: 'Account Security',
-          message: 'Your password was changed successfully. If you did not make this change, please contact support immediately.',
-          date: new Date(Date.now() - 345600000), // 4 days ago
-          read: true,
-          type: 'warning',
-          link: '/settings'
-        }
-      ];
-
-      setNotifications(mockNotifications);
-      setLoadingNotifications(false);
-    }, 1000);
-
-    return () => clearTimeout(timeout);
-  }, [isAuthenticated, loading]);
-
-
-  const handleNotificationClick = (notification: Notification) => {
-    // Mark as read
-    setNotifications(prevNotifications => 
-      prevNotifications.map(n => 
-        n.id === notification.id ? { ...n, read: true } : n
-      )
-    );
-    
-    // If there's a link, navigate to it
-    if (notification.link) {
-      navigate(notification.link);
-    } else {
-      // Navigate to a detailed view with the notification ID
-      navigate(`/notification-detail/${notification.id}`);
+    if (isAuthenticated) {
+      fetchNotifications();
     }
+  }, [isAuthenticated]);
+
+  const handleNotificationClick = async (notificationId: string) => {
+    // Mark as read if it's not already
+    await markAsRead(notificationId);
+    
+    // Navigate to notification detail
+    navigate(`/notification-detail/${notificationId}`);
   };
 
-  const handleDeleteNotification = (id: string, event: React.MouseEvent) => {
+  const handleDeleteNotification = async (id: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    setNotifications(prevNotifications => 
-      prevNotifications.filter(notification => notification.id !== id)
-    );
+    const result = await deleteNotification(id);
+    
     setSnackbar({
       open: true,
-      message: "Notification deleted",
-      severity: "success"
+      message: result.success ? "Notification deleted" : "Failed to delete notification",
+      severity: result.success ? "success" : "error"
     });
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prevNotifications => 
-      prevNotifications.map(notification => ({ ...notification, read: true }))
-    );
+  const handleMarkAllAsRead = async () => {
+    const result = await markAllAsRead();
+    
     setSnackbar({
       open: true,
-      message: "All notifications marked as read",
-      severity: "success"
+      message: result.success ? "All notifications marked as read" : "Failed to mark all as read",
+      severity: result.success ? "success" : "error"
     });
   };
 
-  const deleteAllRead = () => {
-    setNotifications(prevNotifications => 
-      prevNotifications.filter(notification => !notification.read)
-    );
+  const handleDeleteReadNotifications = async () => {
+    const result = await deleteReadNotifications();
+    
     setSnackbar({
       open: true,
-      message: "Read notifications deleted",
-      severity: "success"
+      message: result.success ? "Read notifications deleted" : "Failed to delete read notifications",
+      severity: result.success ? "success" : "error"
     });
   };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   // Helper function to get the icon based on notification type
   const getNotificationIcon = (type: string) => {
@@ -195,15 +122,17 @@ const NotificationDashboard: React.FC = () => {
         return <CheckCircleIcon color="success" />;
       case 'warning':
         return <WarningIcon color="warning" />;
+      case 'error':
+        return <DeleteIcon color="error" />;
       case 'info':
-        return <InfoIcon color="info" />;
       default:
         return <InfoIcon color="info" />;
     }
   };
 
   // Format date for display
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -238,16 +167,16 @@ const NotificationDashboard: React.FC = () => {
             <Box>
               <Button 
                 variant="outlined" 
-                onClick={markAllAsRead} 
-                disabled={unreadCount === 0}
+                onClick={handleMarkAllAsRead} 
+                disabled={unreadCount === 0 || loading}
                 sx={{ mr: 1 }}
               >
                 Mark All as Read
               </Button>
               <Button 
                 variant="outlined" 
-                onClick={deleteAllRead}
-                disabled={!notifications.some(n => n.read)}
+                onClick={handleDeleteReadNotifications}
+                disabled={!notifications.some(n => n.is_read) || loading}
                 color="error"
               >
                 Delete Read
@@ -257,7 +186,15 @@ const NotificationDashboard: React.FC = () => {
           
           <Divider sx={{ mb: 2 }} />
           
-          {notifications.length === 0 ? (
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <Typography color="error">{error}</Typography>
+            </Box>
+          ) : notifications.length === 0 ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
               <Typography variant="h6" color="text.secondary">
                 No notifications
@@ -271,10 +208,10 @@ const NotificationDashboard: React.FC = () => {
                     alignItems="flex-start"
                     sx={{ 
                       cursor: 'pointer', 
-                      backgroundColor: notification.read ? 'transparent' : '#f0f8ff',
+                      backgroundColor: notification.is_read ? 'transparent' : '#f0f8ff',
                       '&:hover': { backgroundColor: '#f5f5f5' }
                     }}
-                    onClick={() => handleNotificationClick(notification)}
+                    onClick={() => handleNotificationClick(notification.id)}
                     secondaryAction={
                       <IconButton 
                         edge="end" 
@@ -287,7 +224,7 @@ const NotificationDashboard: React.FC = () => {
                   >
                     <Grid container spacing={2}>
                       <Grid item>
-                        <Avatar sx={{ bgcolor: notification.read ? 'grey.300' : 'primary.main' }}>
+                        <Avatar sx={{ bgcolor: notification.is_read ? 'grey.300' : 'primary.main' }}>
                           {getNotificationIcon(notification.type)}
                         </Avatar>
                       </Grid>
@@ -297,22 +234,22 @@ const NotificationDashboard: React.FC = () => {
                             <Typography variant="h6" component="div">
                               {notification.title}
                             </Typography>
-                            {!notification.read && (
+                            {!notification.is_read && (
                               <CircleIcon sx={{ ml: 1, color: 'primary.main', fontSize: 12 }} />
                             )}
                           </Box>
                           <Typography variant="caption" color="text.secondary">
-                            {formatDate(notification.date)}
+                            {formatDate(notification.created_at)}
                           </Typography>
                         </Box>
                         <Typography variant="body2" color="text.secondary" paragraph>
                           {notification.message}
                         </Typography>
                         <Chip 
-                          label={notification.read ? "Read" : "Unread"} 
+                          label={notification.is_read ? "Read" : "Unread"} 
                           size="small" 
-                          color={notification.read ? "default" : "primary"}
-                          variant={notification.read ? "outlined" : "filled"}
+                          color={notification.is_read ? "default" : "primary"}
+                          variant={notification.is_read ? "outlined" : "filled"}
                         />
                       </Grid>
                     </Grid>
