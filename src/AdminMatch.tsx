@@ -43,6 +43,7 @@ const AdminMatch = () => {
   const [selectedFound, setSelectedFound] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [successful, setSuccessful] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -66,6 +67,7 @@ const AdminMatch = () => {
   const handleMatch = async () => {
     if (selectedLost && selectedFound) {
       try {
+        setErrorMessage(null);
         const response = await fetch("./Backend/adminmatch.php", {
           method: 'POST',
           headers: {
@@ -76,6 +78,17 @@ const AdminMatch = () => {
             found_item_id: selectedFound,
           }),
         });
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          // If not JSON, get the text response to show the error
+          const textResponse = await response.text();
+          console.error("Non-JSON response:", textResponse);
+          setSuccessful("error");
+          setErrorMessage("Server returned an invalid response format. Please check server logs.");
+          return;
+        }
 
         const result = await response.json();
 
@@ -91,15 +104,15 @@ const AdminMatch = () => {
           }));
         } else {
           setSuccessful("error");
-          alert(result.error);
+          setErrorMessage(result.error || "Unknown error occurred");
         }
       } catch (error) {
         console.error("There was an error matching the items!", error);
         setSuccessful("error");
-        alert("An error occurred while matching the items.");
+        setErrorMessage("Failed to process the response. There might be an issue with the server.");
       }
     } else {
-      alert("Please select both a lost item and a found item.");
+      setErrorMessage("Please select both a lost item and a found item.");
     }
   };
 
@@ -280,7 +293,7 @@ const AdminMatch = () => {
         }
         {successful === "error" && 
           <Typography color="error" align="center" sx={{ marginTop: 2 }}>
-            There was an error matching the items.
+            {errorMessage || "There was an error matching the items."}
           </Typography>
         }
       </Paper>

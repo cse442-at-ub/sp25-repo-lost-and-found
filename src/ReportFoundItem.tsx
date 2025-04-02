@@ -1,9 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LayoutDefault from './LayoutDefault';
 import { Box, Button, TextField, Typography, Paper, Grid, IconButton, Snackbar, Alert, Input, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import { useNavigate } from 'react-router'; // Import useNavigate
+import { useAuth } from './components/AuthContext'; // Import useAuth
 
 function ReportFoundItem() {
+    const navigate = useNavigate(); // Initialize useNavigate
+    const { isAuthenticated, loading } = useAuth(); // Use the auth context
+
+    // Define the missing categoryOptions array
+    const categoryOptions = [
+        'Electronics',
+        'Clothing',
+        'Accessories',
+        'Books',
+        'Documents',
+        'Keys',
+        'Wallet/Purse',
+        'Jewelry',
+        'Other'
+    ];
+
     const [itemName, setItemName] = useState('');
     const [category, setCategory] = useState('');
     const [dateFound, setDateFound] = useState('');
@@ -18,28 +36,31 @@ function ReportFoundItem() {
         open: boolean;
         severity: "error" | "warning" | "info" | "success";
         message: string;
-      }>({
-          open: false,
-          severity: "info",
-          message: "",
-      });
+    }>({
+        open: false,
+        severity: "info",
+        message: "",
+    });
 
+    // Add the missing handleImageChange function
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             setImage(event.target.files[0]);
         }
     };
 
+    // Add the missing handleSubmit function
     const handleSubmit = async () => {
         if (!itemName || !category || !dateFound) {
             setSnackbar({
                 open: true,
-                message: 'Item name, category, and date found are required.',
-                severity: 'error',
+                message: "Please fill in all required fields",
+                severity: "error"
             });
             return;
         }
 
+        // Create form data to send to backend
         const formData = new FormData();
         formData.append('itemName', itemName);
         formData.append('category', category);
@@ -56,16 +77,20 @@ function ReportFoundItem() {
 
         try {
             const response = await fetch('./Backend/ReportFoundItem.php', {
-            //const response = await fetch('./Backend/ReportFoundItem.php', {
                 method: 'POST',
                 body: formData,
+                credentials: 'include' // Include cookies for session
             });
 
-            const data = await response.json();
-
-            if (data.success) {
-                setSnackbar({ open: true, message: "Found item reported successfully!", severity: "success" });
-                // Reset form fields here if needed
+            const result = await response.json();
+            
+            if (result.success) {
+                setSnackbar({
+                    open: true,
+                    message: "Found item reported successfully!",
+                    severity: "success"
+                });
+                // Reset form fields
                 setItemName('');
                 setCategory('');
                 setDateFound('');
@@ -77,23 +102,61 @@ function ReportFoundItem() {
                 setPhone('');
                 setImage(null);
             } else {
-                setSnackbar({ open: true, message: data.message || "Failed to report found item.", severity: "error" });
+                setSnackbar({
+                    open: true,
+                    message: result.message || "Error reporting found item",
+                    severity: "error"
+                });
             }
         } catch (error) {
-            console.error('Error reporting found item:', error);
-            setSnackbar({ open: true, message: "An error occurred while reporting the found item.", severity: "error" });
+            console.error('Error submitting form:', error);
+            setSnackbar({
+                open: true,
+                message: "An error occurred while submitting the form",
+                severity: "error"
+            });
         }
     };
 
-    const categoryOptions = [
-        'Electronics',
-        'Documents',
-        'Clothing',
-        'Jewelry',
-        'Keys',
-        'Wallet',
-        'Other',
-    ];
+    // Check authentication status
+    useEffect(() => {
+        if (!loading && !isAuthenticated) {
+            // User is not authenticated, show snackbar message
+            setSnackbar({
+                open: true,
+                message: "You need to be logged in to report a found item",
+                severity: "warning"
+            });
+            // Optional: redirect after a delay
+            setTimeout(() => navigate('/login'), 2000);
+        }
+    }, [isAuthenticated, loading, navigate]);
+
+    // If not authenticated, display login message
+    if (!loading && !isAuthenticated) {
+        return (
+            <LayoutDefault>
+                <Paper sx={{ padding: 4, maxWidth: 600, margin: 'auto', marginTop: 4 }}>
+                    <Typography variant="h5" align="center" gutterBottom>
+                        Authentication Required
+                    </Typography>
+                    <Alert severity="warning" sx={{ mb: 3 }}>
+                        You need to be logged in to report a found item.
+                    </Alert>
+                    <Box display="flex" justifyContent="center">
+                        <Button 
+                            variant="contained" 
+                            color="primary" 
+                            onClick={() => navigate('/login')}
+                            size="large"
+                        >
+                            Go to Login
+                        </Button>
+                    </Box>
+                </Paper>
+            </LayoutDefault>
+        );
+    }
 
     return (
         <LayoutDefault>
