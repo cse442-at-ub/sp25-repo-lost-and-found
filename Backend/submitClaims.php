@@ -1,7 +1,16 @@
 <?php
 // Start session to access user info
 session_start();
+
+// Set headers to prevent error output and ensure JSON response
 header('Content-Type: application/json');
+// Prevent PHP from outputting errors as HTML
+ini_set('display_errors', '0');
+error_reporting(0);
+
+// Log errors to server log instead
+ini_set('log_errors', '1');
+error_log("Starting claim submission process");
 
 // Database connection
 $host = 'localhost';
@@ -9,24 +18,32 @@ $dbname = 'cse442_2025_spring_team_s_db';
 $username = 'blaketur'; // Replace with appropriate credentials
 $password = '50519587'; // Replace with appropriate credentials
 
-// Include notification helper for sending updates
-require_once 'notification_helper.php';
+try {
+    // Establish database connection with error handling
+    $conn = new mysqli($host, $username, $password, $dbname);
 
-$conn = new mysqli($host, $username, $password, $dbname);
+    if ($conn->connect_error) {
+        error_log("Database connection failed: " . $conn->connect_error);
+        echo json_encode([
+            "success" => false, 
+            "message" => "Database connection failed. Please try again later."
+        ]);
+        exit;
+    }
 
-if ($conn->connect_error) {
+    // Check if user is logged in
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode([
+            "success" => false, 
+            "message" => "User not logged in"
+        ]);
+        exit;
+    }
+} catch (Exception $e) {
+    error_log("Error connecting to database: " . $e->getMessage());
     echo json_encode([
         "success" => false, 
-        "message" => "Database connection failed: " . $conn->connect_error
-    ]);
-    exit;
-}
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode([
-        "success" => false, 
-        "message" => "User not logged in"
+        "message" => "Database connection failed. Please try again later."
     ]);
     exit;
 }
@@ -43,7 +60,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Get JSON input from the request body
-$input = json_decode(file_get_contents('php://input'), true);
+$inputJSON = file_get_contents('php://input');
+error_log("Received input: " . $inputJSON);
+
+// Check if JSON is valid
+$input = json_decode($inputJSON, true);
+if (json_last_error() !== JSON_ERROR_NONE) {
+    error_log("JSON parse error: " . json_last_error_msg());
+    echo json_encode([
+        "success" => false,
+        "message" => "Invalid JSON input: " . json_last_error_msg()
+    ]);
+    exit;
+}
 
 // Validate required fields
 if (!isset($input['item_id']) || !isset($input['claim_type']) || !isset($input['proof_of_ownership'])) {
@@ -109,14 +138,28 @@ try {
     $notificationMessage = "Your claim for the $itemName has been submitted and is awaiting review.";
     $notificationDetails = "Your claim (ID: $claimId) has been received and will be reviewed by our administrators. You will be notified when your claim is approved or denied.";
     
-    createNotification(
-        $userId,
-        $notificationTitle,
-        $notificationMessage,
-        'info',
-        null,
-        $notificationDetails
-    );
+    // Only create notification if the function exists (file was loaded successfully)
+    if (function_exists('createNotification')) {
+        try {
+            $notificationResult = createNotification(
+                $userId,
+                $notificationTitle,
+                $notificationMessage,
+                'info',
+                null,
+                $notificationDetails
+            );
+            
+            if (!$notificationResult) {
+                error_log("Failed to create notification for claim $claimId");
+            }
+        } catch (Exception $notificationError) {
+            error_log("Error creating notification: " . $notificationError->getMessage());
+            // Don't fail the whole operation just because notification failed
+        }
+    } else {
+        error_log("createNotification function not available");
+    }
     
     // Also notify admins (if you have a way to identify admin users)
     // This would require a function to get all admin user IDs
@@ -133,18 +176,24 @@ try {
     
 } catch (Exception $e) {
     // Rollback on error
-    if ($conn->connect_error == false) {
+    if ($conn && !$conn->connect_error) {
         $conn->rollback();
     }
     
+    error_log("Error in claim submission: " . $e->getMessage());
+    error_log("Error trace: " . $e->getTraceAsString());
+    
     echo json_encode([
         "success" => false,
-        "message" => "Error submitting claim: " . $e->getMessage()
+        "message" => "Error submitting claim. Please try again later."
     ]);
 } finally {
-    if (isset($stmt)) $stmt->close();
-    if (isset($checkStmt)) $checkStmt->close();
-    if (isset($itemStmt)) $itemStmt->close();
-    $conn->close();
+    // Close all statement and connection resources
+    if (isset($stmt) && $stmt) $stmt->close();
+    if (isset($checkStmt) && $checkStmt) $checkStmt->close();
+    if (isset($itemStmt) && $itemStmt) $itemStmt->close();
+    if (isset($conn) && $conn) $conn->close();
+    
+    error_log("Claim submission process completed");
 }
 ?>
