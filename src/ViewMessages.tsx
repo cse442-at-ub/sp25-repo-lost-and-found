@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Typography, Tooltip, IconButton } from "@mui/material";
+import { Typography, Tooltip, IconButton, Button } from "@mui/material";
 import { Delete } from "@mui/icons-material";
 import LayoutDefault from "./LayoutDefault";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
@@ -45,6 +45,15 @@ const ViewMessages = (e: any) => {
 
   return (
     <LayoutDefault>
+    {/* Back Button */}
+      <Button 
+        variant="outlined" 
+        color="secondary"         
+        onClick={() => window.history.back()} 
+        sx={{ marginBottom: 2 }}
+        >
+        Back
+      </Button>
     <Typography variant="h3" sx={{textAlign: "center", mt: 10}}>Messages</Typography>
     <Tooltip title="Delete">
       <IconButton onClick={deleteRows}>

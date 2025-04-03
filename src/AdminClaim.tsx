@@ -247,6 +247,15 @@ function AdminClaim() {
   return (
     <LayoutDefault>
       <Box sx={{ maxWidth: 1200, margin: 'auto', p: 3 }}>
+        {/* Back Button */}
+                <Button 
+                  variant="outlined" 
+                  color="secondary" 
+                  onClick={() => window.history.back()} 
+                  sx={{ marginBottom: 2 }}
+                >
+                  Back
+                </Button>
         <Typography variant="h3" sx={{ mb: 3, textAlign: 'center' }}>Admin Claim Review</Typography>
         
         {loading ? (
