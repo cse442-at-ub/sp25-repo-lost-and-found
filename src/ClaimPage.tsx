@@ -163,7 +163,7 @@ function ClaimPage() {
         }
 
         try {
-            const response = await fetch('./Backend/submitClaim.php', {
+            const response = await fetch('./Backend/submitClaims.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
