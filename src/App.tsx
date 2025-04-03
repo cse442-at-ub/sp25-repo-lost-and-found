@@ -51,6 +51,7 @@ function App() {
         <Route path="/report-lost-item" element={<ReportLostItem />} />
         <Route path="/report-found-item" element={<ReportFoundItem />} />
         <Route path="/claim" element={<ClaimPage />} />
+        <Route path="/claim-item" element={<ClaimPage />} />
         <Route path="/view-item" element={<ItemPage />} />
         <Route path="/admin-claim" element={<AdminClaim />} />
         <Route path="/admin-console" element={<AdminConsole />} />
