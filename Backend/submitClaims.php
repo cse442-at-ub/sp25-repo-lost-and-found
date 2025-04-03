@@ -4,10 +4,10 @@ session_start();
 header('Content-Type: application/json');
 
 // Database connection
-$host = 'localhost';
+$host = 'db';
 $dbname = 'cse442_2025_spring_team_s_db';
-$username = 'blaketur'; // Replace with appropriate credentials
-$password = '50519587'; // Replace with appropriate credentials
+$username = 'jxboulwa'; // Replace with appropriate credentials
+$password = '50456062'; // Replace with appropriate credentials
 
 // Include notification helper for sending updates
 require_once 'notification_helper.php';
@@ -117,6 +117,22 @@ try {
         null,
         $notificationDetails
     );
+
+    $notificationTitle = "New claim for $itemName";
+    $notificationMessage = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
+    $notificationDetails = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
+    $result = $conn->query('SELECT user_id FROM users WHERE is_admin=1');
+    while ($row = $result->fetch_assoc()) {
+        $adminId = $row['user_id'];
+        createNotification(
+            $adminId,
+            $notificationTitle,
+            $notificationMessage,
+            'info',
+            null,
+            $notificationDetails
+        );
+    }
     
     // Also notify admins (if you have a way to identify admin users)
     // This would require a function to get all admin user IDs
