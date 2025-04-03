@@ -333,7 +333,7 @@ function ClaimPage() {
                                     <CardMedia
                                         component="img"
                                         height="200"
-                                        image={selectedItem.image ? `./Backend/${selectedItem.image}` : "./no-image.png"}
+                                        image={selectedItem.image ? `./${selectedItem.image}` : "./no-image.png"}
                                         alt={selectedItem.item_name}
                                         sx={{ 
                                             objectFit: 'contain', 
