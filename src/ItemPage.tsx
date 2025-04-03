@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import LayoutDefault from './LayoutDefault';
 import { Box, Button, Card, CardContent, CardMedia, Grid, TextField, Typography } from '@mui/material';
+import { useNavigate, useSearchParams } from 'react-router';
 
 function ItemPage() {
+    const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams();
+    const itemId = searchParams.get("itemId")
+
+    if(itemId == null) {
+        navigate("/claim")
+    }
+
   const [messages, setMessages] = useState([
     { user: 'Laura', text: 'Hey, I found an iPhone near Capen.' },
     { user: 'Emily', text: 'Oh, that might be mine! What color is it?' }
