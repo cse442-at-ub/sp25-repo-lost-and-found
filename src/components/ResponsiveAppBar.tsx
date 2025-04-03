@@ -17,7 +17,7 @@ import { useCookies } from 'react-cookie';
 import NotificationIcon from './NotificationIcon';
 import { useAuth } from './AuthContext';
 
-const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'About Us', 'Settings', 'Contact Us'];
+const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'Claim Item', 'About Us', 'Settings', 'Contact Us'];
 
 function ResponsiveAppBar() {
   const navigate = useNavigate();
@@ -131,7 +131,7 @@ function ResponsiveAppBar() {
           </Box>
           <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
           <Typography
-            variant="h5"
+            variant="h6"
             noWrap
             component="a"
             href="/"
