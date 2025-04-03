@@ -96,16 +96,35 @@ try {
     $updateStmt = $pdo->prepare("UPDATE users SET password = ? WHERE user_id = ?");
     $updateResult = $updateStmt->execute([$newHashedPassword, $userId]);
     
-    if ($updateResult) {
-        // Password updated successfully
-        // Log password change for security audit (optional)
-        logPasswordChange($pdo, $userId);
-        
-        echo json_encode(["success" => true, "message" => "Password changed successfully"]);
-    } else {
-        http_response_code(500);
-        echo json_encode(["success" => false, "message" => "Failed to update password"]);
+    // After successful password update
+if ($updateResult) {
+    // Log password change for security audit (already implemented)
+    logPasswordChange($pdo, $userId);
+    
+    // Add this code to create a notification
+    if (file_exists('notification_helper.php')) {
+        try {
+            require_once 'notification_helper.php';
+            notifySecurityEvent(
+                $userId, 
+                'password_changed', 
+                [
+                    'time' => date('Y-m-d H:i:s'),
+                    'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'Unknown',
+                    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+                ]
+            );
+        } catch (Exception $e) {
+            // Log error but continue execution
+            error_log('Failed to create password change notification: ' . $e->getMessage());
+        }
     }
+    
+    echo json_encode(["success" => true, "message" => "Password changed successfully"]);
+} else {
+    http_response_code(500);
+    echo json_encode(["success" => false, "message" => "Failed to update password"]);
+}
     
 } catch (PDOException $e) {
     // Handle database errors

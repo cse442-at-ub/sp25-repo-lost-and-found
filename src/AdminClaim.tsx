@@ -118,6 +118,8 @@ function AdminClaim() {
   // Handle approval/denial of claims
   const handleApproval = async (id: number, approved: number) => {
     try {
+      setLoading(true);
+      
       const response = await fetch(APPROVAL_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,7 +131,21 @@ function AdminClaim() {
         credentials: 'include'
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+      
+      // Get the response text first to check if it's valid JSON
+      const responseText = await response.text();
+      
+      // Try to parse as JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Response is not valid JSON:', responseText);
+        throw new Error('Server returned an invalid response');
+      }
       
       if (data.success) {
         // Remove the claim from UI after approval/denial
@@ -151,7 +167,7 @@ function AdminClaim() {
       console.error("Error updating claim:", error);
       setSnackbar({
         open: true,
-        message: "An error occurred while processing the claim",
+        message: error instanceof Error ? error.message : "An error occurred while processing the claim",
         severity: "error"
       });
     } finally {
@@ -159,6 +175,7 @@ function AdminClaim() {
       setRejectionReason("");
       setDialogOpen(false);
       setSelectedClaimId(null);
+      setLoading(false);
     }
   };
 

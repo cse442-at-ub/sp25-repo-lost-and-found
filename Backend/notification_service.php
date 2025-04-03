@@ -171,7 +171,7 @@ class NotificationService {
     public function deleteNotification($notificationId, $userId) {
         try {
             $stmt = $this->pdo->prepare(
-                "DELETE FROM notifications 
+                "DELETE from notification_system 
                  WHERE id = :id AND user_id = :user_id"
             );
             
