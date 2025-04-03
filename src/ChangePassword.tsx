@@ -146,6 +146,11 @@ const ChangePassword: React.FC = () => {
         setShowCurrentPassword(false);
         setShowNewPassword(false);
         setShowConfirmPassword(false);
+        
+        // Navigate to login page after a short delay to allow the user to see the success message
+        setTimeout(() => {
+          navigateToLogin();
+        }, 2000);
       } else {
         // Password change failed
         setNotification({
