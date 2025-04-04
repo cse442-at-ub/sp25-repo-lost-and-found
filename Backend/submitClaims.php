@@ -13,10 +13,10 @@ ini_set('log_errors', '1');
 error_log("Starting claim submission process");
 
 // Database connection
-$host = 'localhost';
+$host = 'db';
 $dbname = 'cse442_2025_spring_team_s_db';
-$username = 'blaketur'; // Replace with appropriate credentials
-$password = '50519587'; // Replace with appropriate credentials
+$username = 'jxboulwa'; // Replace with appropriate credentials
+$password = '50456062'; // Replace with appropriate credentials
 
 try {
     // Establish database connection with error handling

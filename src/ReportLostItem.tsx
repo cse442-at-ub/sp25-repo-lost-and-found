@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import {
   TextField,
@@ -8,21 +8,45 @@ import {
   MenuItem,
   Paper,
   Avatar,
+  Alert,
+  Snackbar,
+  Box,
 } from '@mui/material';
 import { styled } from '@mui/system';
 import LayoutDefault from './LayoutDefault';
+import { useNavigate } from 'react-router';
+import { useAuth } from './components/AuthContext';
 
 const FileInput = styled('input')({
   display: 'none',
 });
 
 function ReportLostItem() {
+  const navigate = useNavigate();
+  const { isAuthenticated, loading } = useAuth();
   const { control, handleSubmit, register, formState: { errors } } = useForm();
-  const [fileUpload, setFileUpload] = useState(null)
+  const [fileUpload, setFileUpload] = useState(null);
   const [preview, setPreview] = useState("");
   const [successful, setSuccessful] = useState("");
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+
+  // Check authentication status
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      // User is not authenticated, show snackbar message
+      setSnackbarMessage("You need to be logged in to report a lost item");
+      setOpenSnackbar(true);
+    }
+  }, [isAuthenticated, loading]);
 
   const onSubmit = async (data) => {
+    // If not authenticated, redirect to login
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     const formData = new FormData();
     
     formData.append("name", data.itemName);
@@ -42,28 +66,76 @@ function ReportLostItem() {
         const response = await fetch("./Backend/reportlostitem.php", {
             method: "POST",
             body: formData,
+            credentials: 'include', // Include cookies for session authentication
         });
 
         const result = await response.json();
         console.log("Response:", result);
+        
         if(result['success']) {
-          setSuccessful("success")
+          setSuccessful("success");
+          setSnackbarMessage("Your lost item has been reported successfully!");
+          setOpenSnackbar(true);
+        } else if (result['error'] === "User not logged in") {
+          setSuccessful("error");
+          setSnackbarMessage("You need to be logged in to report a lost item");
+          setOpenSnackbar(true);
+          // Redirect to login page after a brief delay
+          setTimeout(() => navigate('/login'), 1500);
         } else {
-          setSuccessful("error")
+          setSuccessful("error");
+          setSnackbarMessage("There was an error reporting your item");
+          setOpenSnackbar(true);
         }
     } catch (error) {
         console.error("Error submitting form:", error);
-        setSuccessful("error")
+        setSuccessful("error");
+        setSnackbarMessage("There was an error submitting the form");
+        setOpenSnackbar(true);
     }
-};
+  };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setFileUpload(file)
+      setFileUpload(file);
       setPreview(URL.createObjectURL(file));
     }
   };
+
+  const handleLoginRedirect = () => {
+    navigate('/login');
+  };
+
+  const handleSnackbarClose = () => {
+    setOpenSnackbar(false);
+  };
+
+  // If not authenticated, display login message
+  if (!loading && !isAuthenticated) {
+    return (
+      <LayoutDefault>
+        <Paper sx={{ padding: 4, maxWidth: 600, margin: 'auto', marginTop: 4 }}>
+          <Typography variant="h5" align="center" gutterBottom>
+            Authentication Required
+          </Typography>
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            You need to be logged in to report a lost item.
+          </Alert>
+          <Box display="flex" justifyContent="center">
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={handleLoginRedirect}
+              size="large"
+            >
+              Go to Login
+            </Button>
+          </Box>
+        </Paper>
+      </LayoutDefault>
+    );
+  }
 
   return (
     <LayoutDefault>
@@ -84,28 +156,6 @@ function ReportLostItem() {
                 helperText={errors.itemName?.message}
                 sx={{ mb: 2 }}
               />
-
-              {/* <Controller
-                name="category"
-                control={control}
-                defaultValue=""
-                rules={{ required: 'Category is required' }}
-                render={({ field }) => (
-                  <TextField
-                    select
-                    label="Category"
-                    fullWidth
-                    {...field}
-                    error={!!errors.category}
-                    helperText={errors.category?.message}
-                    sx={{ mb: 2 }}
-                  >
-                    <MenuItem value="Bag/Luggage">Bag/Luggage</MenuItem>
-                    <MenuItem value="Electronics">Electronics</MenuItem>
-                    <MenuItem value="Clothing">Clothing</MenuItem>
-                  </TextField>
-                )}
-              /> */}
 
               <TextField
                 label="Date Lost"
@@ -213,21 +263,45 @@ function ReportLostItem() {
               />
 
               {successful == "success" && 
-                <Typography color="success">Posted your lost item. Hopefully it's found soon!</Typography>
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  Posted your lost item. Hopefully it's found soon!
+                </Alert>
               }
 
               {successful == "error" && 
-                <Typography color="error">There was an error posting your item at this time.</Typography>
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  There was an error posting your item at this time.
+                </Alert>
               }
 
               {/* Submit Button */}
-              <Button type="submit" variant="contained" fullWidth>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                fullWidth
+                disabled={loading || !isAuthenticated}
+              >
                 Submit
               </Button>
             </Grid>
           </Grid>
         </form>
       </Paper>
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleSnackbarClose} 
+          severity={successful === "success" ? "success" : "error"}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </LayoutDefault>
   );
 }
