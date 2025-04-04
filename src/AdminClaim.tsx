@@ -40,7 +40,7 @@ function AdminClaim() {
       .then((data) => {
         console.log("Response:", data);
         if (data.success) {
-          // Remove the claim from UI after approval/denial
+          // Remove the claim from UI after approval /denial
           setClaims((prevClaims) => prevClaims.filter((claim) => claim.claim_id !== id));
         } else {
           alert("Failed to update claim.");
