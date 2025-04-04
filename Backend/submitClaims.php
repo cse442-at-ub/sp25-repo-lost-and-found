@@ -138,7 +138,7 @@ try {
     $notificationMessage = "Your claim for the $itemName has been submitted and is awaiting review.";
     $notificationDetails = "Your claim (ID: $claimId) has been received and will be reviewed by our administrators. You will be notified when your claim is approved or denied.";
     
-    // Only create notification if the function exists (file was loaded successfully)
+    // Handle notification creation - first check if the function exists
     if (function_exists('createNotification')) {
         try {
             $notificationResult = createNotification(
@@ -153,17 +153,54 @@ try {
             if (!$notificationResult) {
                 error_log("Failed to create notification for claim $claimId");
             }
+            
+            // Also notify admins about the new claim
+            $notifyAdminTitle = "New claim for $itemName";
+            $notifyAdminMessage = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
+            $notifyAdminDetails = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
+            
+            $result = $conn->query('SELECT user_id FROM users WHERE is_admin=1');
+            while ($row = $result->fetch_assoc()) {
+                $adminId = $row['user_id'];
+                createNotification(
+                    $adminId,
+                    $notifyAdminTitle,
+                    $notifyAdminMessage,
+                    'info',
+                    null,
+                    $notifyAdminDetails
+                );
+            }
         } catch (Exception $notificationError) {
             error_log("Error creating notification: " . $notificationError->getMessage());
             // Don't fail the whole operation just because notification failed
         }
     } else {
         error_log("createNotification function not available");
+        
+        // Try to directly insert notification if the function isn't available
+        try {
+            // Insert notification for the claimant
+            $notifStmt = $conn->prepare("INSERT INTO notification_system (user_id, title, message, details, type) VALUES (?, ?, ?, ?, ?)");
+            $type = 'info';
+            $notifStmt->bind_param("issss", $userId, $notificationTitle, $notificationMessage, $notificationDetails, $type);
+            $notifStmt->execute();
+            
+            // Notify admins
+            $notifyAdminTitle = "New claim for $itemName";
+            $notifyAdminMessage = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
+            $notifyAdminDetails = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
+            
+            $result = $conn->query('SELECT user_id FROM users WHERE is_admin=1');
+            while ($row = $result->fetch_assoc()) {
+                $adminId = $row['user_id'];
+                $notifStmt->bind_param("issss", $adminId, $notifyAdminTitle, $notifyAdminMessage, $notifyAdminDetails, $type);
+                $notifStmt->execute();
+            }
+        } catch (Exception $directNotifError) {
+            error_log("Error creating direct notification: " . $directNotifError->getMessage());
+        }
     }
-    
-    // Also notify admins (if you have a way to identify admin users)
-    // This would require a function to get all admin user IDs
-    // Alternatively, you could create a special admin notification in the database
     
     // Commit transaction
     $conn->commit();
@@ -192,6 +229,7 @@ try {
     if (isset($stmt) && $stmt) $stmt->close();
     if (isset($checkStmt) && $checkStmt) $checkStmt->close();
     if (isset($itemStmt) && $itemStmt) $itemStmt->close();
+    if (isset($notifStmt) && $notifStmt) $notifStmt->close();
     if (isset($conn) && $conn) $conn->close();
     
     error_log("Claim submission process completed");
