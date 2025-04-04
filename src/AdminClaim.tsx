@@ -30,7 +30,7 @@ function AdminClaim() {
       .catch((error) => console.error("Error fetching claims:", error));
   }, []);
 
-  const handleApproval = (id, approved) => {
+  const handleApproval = (id, approved) => { 
     fetch(APPROVAL_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
