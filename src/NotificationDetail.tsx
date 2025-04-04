@@ -124,9 +124,42 @@ const NotificationDetail: React.FC = () => {
 
   const handleNavigateToLink = () => {
     if (notification?.link) {
-      navigate(notification.link);
+      // If link exists, navigate to it
+      if (notification.link.startsWith('http')) {
+        // If it's an external link, open in new tab
+        window.open(notification.link, '_blank');
+      } else {
+        // If it's an internal link, use the router
+        navigate(notification.link);
+      }
+    } else {
+      // If no link is provided, show a message
+      setSnackbar({
+        open: true,
+        message: "No additional details available for this notification",
+        severity: "info"
+      });
     }
   };
+  
+  // Only show View Details button if we have a valid link
+  const shouldShowDetailsButton = () => {
+    if (!notification?.link) return false;
+    
+    // Check if link is a valid route
+    // For claim links
+    if (notification.link.includes('/claim-details')) return true;
+    
+    // For match links
+    if (notification.link.includes('/matches')) return true;
+    
+    // For found items
+    if (notification.link.includes('/found-items')) return true;
+    
+    // For any other valid links
+    return notification.link.startsWith('/') || notification.link.startsWith('http');
+  };
+  
 
   return (
     <LayoutDefault>
@@ -212,19 +245,8 @@ const NotificationDetail: React.FC = () => {
                   </Paper>
                 </>
               )}
-
-              {notification.link && (
-                <Box sx={{ mt: 3 }}>
-                  <Button 
-                    variant="contained" 
-                    color="primary" 
-                    onClick={handleNavigateToLink}
-                  >
-                    {notification.type === 'success' ? 'View Details' : 
-                     notification.type === 'warning' ? 'Take Action' : 'View More'}
-                  </Button>
-                </Box>
-              )}
+            
+            
             </>
           ) : (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>

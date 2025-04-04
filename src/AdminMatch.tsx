@@ -138,6 +138,15 @@ const AdminMatch = () => {
   return (
     <LayoutDefault>
       <Paper sx={{ padding: 4, width: '90%', margin: 'auto', marginTop: 4, borderRadius: 3, boxShadow: 3 }}>
+        {/* Back Button */}
+        <Button 
+          variant="outlined" 
+          color="secondary" 
+          onClick={() => window.history.back()} 
+          sx={{ marginBottom: 2 }}
+        >
+          Back
+        </Button>
         <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#1976d2' }}>
           Admin Lost & Found Match
         </Typography>
