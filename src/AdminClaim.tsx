@@ -10,11 +10,11 @@ import {
 } from "@mui/material";
 
 const API_URL =
-  "https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/adminClaim.php";
+  "./Backend/adminClaim.php";
 const APPROVAL_URL =
-  "https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/setClaimApproved.php";
+  "./Backend/setClaimApproved.php";
 const IMAGE_BASE_URL =
-  "https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/";
+  "./Backend/";
 
 function AdminClaim() {
   const [claims, setClaims] = useState([]);
