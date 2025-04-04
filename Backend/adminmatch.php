@@ -1,4 +1,10 @@
 <?php
+
+// Database configuration
+require_once 'db.php';
+require_once 'session.php';
+validateSession(true);
+
 ini_set('display_errors', '0'); // Disable error display to the browser
 ini_set('display_startup_errors', '0');
 error_reporting(E_ALL);
