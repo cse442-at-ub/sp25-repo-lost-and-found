@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import LayoutDefault from './LayoutDefault'
 import { Box, Button, Card, CardActionArea, CardContent, CardMedia, Grid, Grid2, Typography } from '@mui/material'
 import ReportLostItem from '../public/report-lost-item.png'
@@ -8,13 +8,38 @@ import { useNavigate } from 'react-router'
 
 function HomePage() {   
     const navigate = useNavigate();
+    const [userInfo, setUserInfo] = useState<any>({});
+
+    useEffect(() => {
+        fetch('./Backend/userinfo.php', {
+            credentials: 'include', // Ensures cookies/session are sent with the request
+        })
+        .then(response => response.json())
+        .then(data => setUserInfo(data))
+        .catch(error => console.error('Error fetching user info:', error));
+    }, []);
+
+    console.log(userInfo)
+    if(userInfo['error']) {
+        console.log("Not logged in")
+    } else {
+        console.log(userInfo)
+    }
 
   return (
     <>
         <LayoutDefault>
                 <Box sx={{ display: 'flex', justifyContent: 'right', gap: '20px', margin: '20px' }}>
-                    <Button variant="contained" onClick={() => navigate('/login')}>Login</Button>
-                    <Button variant="contained" onClick={() => navigate('/register')}>Register</Button>
+                    { userInfo["user_id"] ?
+                        <>
+                            <Typography variant="body1" gutterBottom>Welcome, {userInfo['first_name']}</Typography>
+                        </>
+                    : 
+                        <>
+                            <Button variant="contained" onClick={() => navigate('/login')}>Login</Button>
+                            <Button variant="contained" onClick={() => navigate('/register')}>Register</Button>
+                        </>
+                    }
                 </Box>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
@@ -29,7 +54,7 @@ function HomePage() {
                 <Grid container justifyContent={'center'} spacing={12}>
                     <Grid item size={4}>
                         <Card sx={{ maxWidth: 345 }}>
-                            <CardActionArea>
+                            <CardActionArea onClick={() => {navigate("/report-lost-item")}}>
                                 <CardMedia
                                 component="img"
                                 image={ReportLostItem}
@@ -45,7 +70,7 @@ function HomePage() {
                     </Grid>
                     <Grid item size={4}>
                         <Card sx={{ maxWidth: 345 }}>
-                            <CardActionArea>
+                            <CardActionArea onClick={() => {navigate("/report-found-item")}}>
                                 <CardMedia
                                 component="img"
                                 image={ReportFoundItem}
@@ -60,7 +85,7 @@ function HomePage() {
                         </Card>
                     </Grid>
                     <Grid item size={4}>
-                        <Card sx={{ maxWidth: 345 }}>
+                        <Card sx={{ maxWidth: 345 }} onClick={() => navigate('/claim')}>
                             <CardActionArea>
                                 <CardMedia
                                 component="img"

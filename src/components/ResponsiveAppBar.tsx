@@ -13,14 +13,23 @@ import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 import { useNavigate } from 'react-router';
+import { useCookies } from 'react-cookie';
+import NotificationIcon from './NotificationIcon';
+import { useAuth } from './AuthContext';
 
-const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'About Us', 'Settings', 'Admin Claim', 'Admin Match', 'Contact Us'];
-const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
+const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'Claim Item', 'About Us', 'Settings', 'Contact Us'];
 
 function ResponsiveAppBar() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+  const [cookies] = useCookies(['is_admin', 'session_id']);
+  const { isAuthenticated, isAdmin, logout } = useAuth();
+
+  // For debugging admin status
+  React.useEffect(() => {
+    console.log("Auth state in NavBar:", { isAuthenticated, isAdmin, cookieAdmin: cookies.is_admin });
+  }, [isAuthenticated, isAdmin, cookies.is_admin]);
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -38,13 +47,24 @@ function ResponsiveAppBar() {
   };
 
   const redirectToPage = (page: string) => {
-    var pageName = page.toLowerCase()
-    pageName.replace(' ', '-')
+    var pageName = page.toLowerCase();
+    //@ts-ignore
+    pageName = pageName.replaceAll(' ', '-');
 
-    if(pageName == "home") {
-      navigate("/")
+    if(pageName === "home") {
+      navigate("/");
+      return;
     }
-  }
+
+    navigate("/" + pageName);
+  };
+
+  const handleLogout = async () => {
+    handleCloseUserMenu();
+    await logout();
+    // Force a full page reload to reset the UI state completely
+    window.location.reload();
+  };
 
   return (
     <AppBar position="static">
@@ -55,7 +75,7 @@ function ResponsiveAppBar() {
             variant="h6"
             noWrap
             component="a"
-            href="#app-bar-with-responsive-menu"
+            href="/"
             sx={{
               mr: 2,
               display: { xs: 'none', md: 'flex' },
@@ -96,18 +116,25 @@ function ResponsiveAppBar() {
               sx={{ display: { xs: 'block', md: 'none' } }}
             >
               {pages.map((page) => (
-                <MenuItem key={page} onClick={handleCloseNavMenu}>
+                <MenuItem key={page} onClick={() => {redirectToPage(page)}}>
                   <Typography sx={{ textAlign: 'center' }}>{page}</Typography>
                 </MenuItem>
               ))}
+              {
+                isAdmin && (
+                <MenuItem key='Admin Console' onClick={() => {navigate('/admin-console')}}>
+                  <Typography sx={{ textAlign: 'center' }}>Admin Console</Typography>
+                </MenuItem>
+                )
+              }
             </Menu>
           </Box>
           <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
           <Typography
-            variant="h5"
+            variant="h6"
             noWrap
             component="a"
-            href="#app-bar-with-responsive-menu"
+            href="/"
             sx={{
               mr: 2,
               display: { xs: 'flex', md: 'none' },
@@ -131,7 +158,24 @@ function ResponsiveAppBar() {
                 {page}
               </Button>
             ))}
+            {
+              isAdmin && (
+              <Button
+                key="Admin Console"
+                onClick={() => {navigate('/admin-console')}}
+                sx={{ my: 2, color: 'white', display: 'block' }}
+              >Admin Console</Button>
+              )
+            }
           </Box>
+          
+          {/* Notification icon */}
+          {isAuthenticated && (
+            <Box sx={{ mr: 2 }}>
+              <NotificationIcon />
+            </Box>
+          )}
+
           <Box sx={{ flexGrow: 0 }}>
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
@@ -154,11 +198,15 @@ function ResponsiveAppBar() {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
             >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
+              {isAuthenticated ? (
+                <MenuItem onClick={handleLogout}>
+                  <Typography sx={{ textAlign: 'center' }}>Logout</Typography>
                 </MenuItem>
-              ))}
+              ) : (
+                <MenuItem onClick={() => navigate('/login')}>
+                  <Typography sx={{ textAlign: 'center' }}>Login</Typography>
+                </MenuItem>
+              )}
             </Menu>
           </Box>
         </Toolbar>
