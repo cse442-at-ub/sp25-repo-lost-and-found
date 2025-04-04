@@ -445,7 +445,7 @@ function ClaimPage() {
                                     <CardMedia
                                         component="img"
                                         height="200"
-                                        image={selectedItem.image ? `./Backend/${selectedItem.image}` : "./no-image.png"}
+                                        image={selectedItem.image ? `./Backend/${encodeURI(selectedItem.image)}` : "./no-image.png"}
                                         alt={selectedItem.item_name}
                                         sx={{ 
                                             objectFit: 'contain', 
@@ -609,7 +609,7 @@ function ClaimPage() {
                                     <CardMedia
                                         component="img"
                                         height="140"
-                                        image={item.image ? `./Backend/${item.image}` : "./no-image.png"}
+                                        image={item.image ? `./Backend/${encodeURI(item.image)}` : "./no-image.png"}
                                         alt={item.item_name}
                                         sx={{ 
                                             objectFit: 'contain',
