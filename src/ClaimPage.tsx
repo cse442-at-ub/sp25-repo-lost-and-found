@@ -29,7 +29,7 @@ interface FoundItem {
   category?: string;
 }
 
-// Interface for claim form data
+// Interface for claim form  data
 interface ClaimData {
   itemId: number;
   proofOfOwnership: string;
