@@ -67,6 +67,19 @@ function ClaimPage() {
         message: '',
         severity: 'info' as 'error' | 'warning' | 'info' | 'success'
     });
+    const [searchQuery, setSearchQuery] = useState(''); // State for search query
+
+    // Filtered items based on search query
+    const filteredItems = foundItems.filter(item =>
+        item.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.location_found.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    // Handle search input change
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+    };
 
     // Redirect to login if not authenticated
     useEffect(() => {
@@ -294,12 +307,22 @@ function ClaimPage() {
                     Browse found items and claim what belongs to you
                 </Typography>
 
+                {/* Search Bar */}
+                <TextField
+                    fullWidth
+                    variant="outlined"
+                    placeholder="Search items by name, location, or description..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    sx={{ mb: 3 }}
+                />
+
                 <Divider sx={{ my: 3 }} />
 
                 {/* If no items found */}
-                {foundItems.length === 0 && (
+                {filteredItems.length === 0 && (
                     <Alert severity="info" sx={{ mt: 2 }}>
-                        No found items are currently available for claiming.
+                        No items match your search criteria.
                     </Alert>
                 )}
 
@@ -477,9 +500,23 @@ function ClaimPage() {
                     </Grid>
                 ) : (
                     /* Grid of items to select from */
-                    <Grid container spacing={3}>
-                        {foundItems.map((item) => (
-                            <Grid item key={item.id} xs={12} sm={6} md={4}>
+                    <Grid 
+                        container 
+                        spacing={3} 
+                        sx={{ 
+                            minHeight: '300px', // Ensure the grid has a minimum height
+                            justifyContent: filteredItems.length === 0 ? 'center' : 'flex-start' // Center content if no items
+                        }}
+                    >
+                        {filteredItems.map((item) => (
+                            <Grid 
+                                item 
+                                key={item.id} 
+                                xs={12} 
+                                sm={6} 
+                                md={4} 
+                                sx={{ display: 'flex' }} // Ensure consistent card sizing
+                            >
                                 <Card 
                                     sx={{ 
                                         height: '100%', 
@@ -491,7 +528,8 @@ function ClaimPage() {
                                             boxShadow: 6
                                         },
                                         borderRadius: 2,
-                                        overflow: 'hidden'
+                                        overflow: 'hidden',
+                                        width: '100%' // Ensure cards take full width of their container
                                     }}
                                 >
                                     <CardMedia
