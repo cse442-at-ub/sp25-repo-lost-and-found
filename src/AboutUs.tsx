@@ -11,7 +11,7 @@ function AboutUs() {
     const [userInfo, setUserInfo] = useState<any>({});
 
     useEffect(() => {
-        fetch('https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/userinfo.php', {
+        fetch('./Backend/userinfo.php', {
             credentials: 'include', // Ensures cookies/session are sent with the request
         })
         .then(response => response.json())
@@ -36,8 +36,7 @@ function AboutUs() {
                                 component="img"
                                 src="./lost-and-found.png"
                                 alt="Hero Image"
-                                height="100%"
-                                sx={{ borderRadius: 2 }}
+                                sx={{ maxWidth: "350px", height: "auto" , objectFit: "contain", display: "block",}}
                             />
                         </Grid>
                         
@@ -69,8 +68,8 @@ function AboutUs() {
                                 component="img"
                                 src="./example-items.png"
                                 alt="Hero Image"
-                                height="100%"
-                                sx={{ borderRadius: 2 }}
+                                
+                                sx={{ maxWidth: "320px", height: "auto" , objectFit: "contain", display: "block",}}
                             />
                         </Grid>
                     </Grid>

@@ -11,7 +11,7 @@ function HomePage() {
     const [userInfo, setUserInfo] = useState<any>({});
 
     useEffect(() => {
-        fetch('https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/userinfo.php', {
+        fetch('./Backend/userinfo.php', {
             credentials: 'include', // Ensures cookies/session are sent with the request
         })
         .then(response => response.json())
@@ -54,7 +54,7 @@ function HomePage() {
                 <Grid container justifyContent={'center'} spacing={12}>
                     <Grid item size={4}>
                         <Card sx={{ maxWidth: 345 }}>
-                            <CardActionArea>
+                            <CardActionArea onClick={() => {navigate("/report-lost-item")}}>
                                 <CardMedia
                                 component="img"
                                 image={ReportLostItem}
@@ -70,7 +70,7 @@ function HomePage() {
                     </Grid>
                     <Grid item size={4}>
                         <Card sx={{ maxWidth: 345 }}>
-                            <CardActionArea>
+                            <CardActionArea onClick={() => {navigate("/report-found-item")}}>
                                 <CardMedia
                                 component="img"
                                 image={ReportFoundItem}
@@ -85,7 +85,7 @@ function HomePage() {
                         </Card>
                     </Grid>
                     <Grid item size={4}>
-                        <Card sx={{ maxWidth: 345 }}>
+                        <Card sx={{ maxWidth: 345 }} onClick={() => navigate('/claim')}>
                             <CardActionArea>
                                 <CardMedia
                                 component="img"

@@ -11,8 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
-
-
 session_start();
 header("Content-Type: application/json");
 
@@ -32,15 +30,12 @@ try {
 
 // Ensure user is logged in before processing any request
 if (!isset($_SESSION["user_id"])) {
-
     echo json_encode(["error" => "Unauthorized"]);
     http_response_code(401);
     exit;
 }
 
-$userId = $_SESSION["user_id"]; //  Retrieve from session
-
-
+$userId = $_SESSION["user_id"]; // Retrieve from session
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -93,8 +88,6 @@ function handleGetRequest($conn, $userId) {
     }
 }
 
-
-
 // Function to Update User Info or Notifications
 function handlePostRequest($conn, $userId) {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -115,15 +108,69 @@ function handlePostRequest($conn, $userId) {
     }
 }
 
+// Function to Check if Email or Phone is Already in Use
+function isEmailOrPhoneInUse($conn, $userId, $field, $value) {
+    try {
+        $stmt = $conn->prepare("SELECT user_id FROM users WHERE $field = :value AND user_id != :userId AND is_deleted = 0");
+        $stmt->execute([':value' => $value, ':userId' => $userId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
+    } catch (PDOException $e) {
+        return false; // Error occurred, default to not in use
+    }
+}
+
 // Function to Update User Info
 function updateUserInfo($conn, $userId, $userInfo) {
     try {
+        // Check if any values are empty
+        foreach (['firstName', 'lastName', 'email'] as $field) {
+            if (empty($userInfo[$field])) {
+                echo json_encode(["error" => "Required field $field cannot be empty"]);
+                http_response_code(400);
+                return;
+            }
+        }
+
+        // Validate and sanitize email
+        $email = filter_var($userInfo['email'], FILTER_VALIDATE_EMAIL);
+        if (!$email) {
+            echo json_encode(["error" => "Invalid email format"]);
+            http_response_code(400);
+            return;
+        }
+
+        // Validate phone format if provided
+        $phone = null;
+        if (!empty($userInfo['phone'])) {
+            if (!preg_match("/\(\d{3}\) \d{3}-\d{4}/", $userInfo['phone'])) {
+                echo json_encode(["error" => "Invalid phone format. Use (XXX) XXX-XXXX"]);
+                http_response_code(400);
+                return;
+            }
+            $phone = $userInfo['phone'];
+        }
+
+        // Check if email is already in use by another user
+        if (isEmailOrPhoneInUse($conn, $userId, 'email', $email)) {
+            echo json_encode(["error" => "Email is already in use by another user"]);
+            http_response_code(409); // Conflict
+            return;
+        }
+
+        // Check if phone is already in use by another user (if provided)
+        if ($phone && isEmailOrPhoneInUse($conn, $userId, 'phone_number', $phone)) {
+            echo json_encode(["error" => "Phone number is already in use by another user"]);
+            http_response_code(409); // Conflict
+            return;
+        }
+
+        // Update user information
         $stmt = $conn->prepare("UPDATE users SET first_name=:firstName, last_name=:lastName, email=:email, phone_number=:phone WHERE user_id=:userId");
         $stmt->execute([
             ':firstName' => filter_var($userInfo['firstName'], FILTER_SANITIZE_SPECIAL_CHARS),
             ':lastName' => filter_var($userInfo['lastName'], FILTER_SANITIZE_SPECIAL_CHARS),
-            ':email' => filter_var($userInfo['email'], FILTER_VALIDATE_EMAIL),
-            ':phone' => preg_match("/\(\d{3}\) \d{3}-\d{4}/", $userInfo['phone']) ? $userInfo['phone'] : null,
+            ':email' => $email,
+            ':phone' => $phone,
             ':userId' => $userId
         ]);
 
