@@ -1,6 +1,12 @@
 <?php
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+
+// Database configuration
+require_once 'db.php';
+require_once 'session.php';
+validateSession(true);
+
+ini_set('display_errors', '0'); // Disable error display to the browser
+ini_set('display_startup_errors', '0');
 error_reporting(E_ALL);
 
 header('Content-Type: application/json');
@@ -31,22 +37,152 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Prepare and bind the SQL statement
-    $stmt = $conn->prepare("INSERT INTO matches (lost_item_id, found_item_id) VALUES (?, ?)");
-    $stmt->bind_param("ii", $lost_item_id, $found_item_id);
+    // Start transaction
+    $conn->begin_transaction();
 
-    // Execute the statement
-    if ($stmt->execute()) {
-        echo json_encode(["success" => "Items matched successfully"]);
-    } else {
-        echo json_encode(["error" => "Failed to match items"]);
+    try {
+        // Prepare and bind the SQL statement for creating a match
+        $stmt = $conn->prepare("INSERT INTO matches (lost_item_id, found_item_id) VALUES (?, ?)");
+        $stmt->bind_param("ii", $lost_item_id, $found_item_id);
+
+        // Execute the statement
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to match items");
+        }
+        
+        // Try to get details about the lost item and its owner
+        try {
+            $lostItemQuery = $conn->prepare("
+                SELECT li.name, li.user_id 
+                FROM lost_items li 
+                WHERE li.id = ?
+            ");
+            $lostItemQuery->bind_param("i", $lost_item_id);
+            
+            if ($lostItemQuery->execute()) {
+                $lostResult = $lostItemQuery->get_result();
+                $lostDetails = $lostResult->fetch_assoc();
+                
+                // Log lost item details for debugging only in error log
+                error_log("Lost item details: " . print_r($lostDetails, true));
+            } else {
+                error_log("Failed to get lost item details");
+            }
+        } catch (Exception $e) {
+            error_log("Error getting lost item details: " . $e->getMessage());
+        }
+
+        // Try to get details about the found item and its finder
+        try {
+            $foundItemQuery = $conn->prepare("
+                SELECT fi.item_name, fi.user_id 
+                FROM found_items fi 
+                WHERE fi.id = ?
+            ");
+            $foundItemQuery->bind_param("i", $found_item_id);
+            
+            if ($foundItemQuery->execute()) {
+                $foundResult = $foundItemQuery->get_result();
+                $foundDetails = $foundResult->fetch_assoc();
+                
+                // Log found item details for debugging only in error log
+                error_log("Found item details: " . print_r($foundDetails, true));
+            } else {
+                error_log("Failed to get found item details");
+            }
+        } catch (Exception $e) {
+            error_log("Error getting found item details: " . $e->getMessage());
+        }
+        
+        // Try to notify the users using direct database insertion if notification_helper.php is available
+        if (file_exists('notification_helper.php')) {
+            try {
+                require_once 'notification_helper.php';
+                
+                // Notify the person who lost the item
+                if (isset($lostDetails) && isset($lostDetails['user_id'])) {
+                    $lostUserId = $lostDetails['user_id'];
+                    $itemName = $lostDetails['name'] ?? 'Item';
+                    
+                    $notifyResult = createNotification(
+                        $lostUserId,
+                        'Item Match Found',
+                        "A $itemName matching your lost item description has been found.",
+                        'success',
+                        "/claim?item=$lost_item_id",
+                        "Good news! We've found an item that matches your lost $itemName. Please visit the claim page to verify and claim your item."
+                    );
+                    error_log("createNotification result for lost user $lostUserId: " . ($notifyResult ? "Success (ID: $notifyResult)" : "Failed"));
+                }
+                
+                // Notify the person who found the item
+                if (isset($foundDetails) && isset($foundDetails['user_id'])) {
+                    $foundUserId = $foundDetails['user_id'];
+                    $itemName = $foundDetails['item_name'] ?? 'Item';
+                    
+                    $notifyResult = createNotification(
+                        $foundUserId,
+                        'Match Found for Your Found Item',
+                        "Someone has reported losing a $itemName that matches what you found.",
+                        'success',
+                        "/found-items?id=$found_item_id",
+                        "Good news! We've identified the potential owner of the $itemName you found. Thank you for your help!"
+                    );
+                    error_log("createNotification result for found user $foundUserId: " . ($notifyResult ? "Success (ID: $notifyResult)" : "Failed"));
+                }
+            } catch (Exception $e) {
+                error_log("Error with notifications: " . $e->getMessage());
+                // Continue execution even if notifications fail
+            }
+        } else {
+            // Try direct database insertions for notifications if helper file isn't available
+            error_log("notification_helper.php not found, attempting direct notification insertions");
+            
+            try {
+                if (isset($lostDetails) && isset($lostDetails['user_id'])) {
+                    $lostUserId = $lostDetails['user_id'];
+                    $itemName = $lostDetails['name'] ?? 'Item';
+                    $title = 'Item Match Found';
+                    $message = "A $itemName matching your lost item description has been found.";
+                    $type = 'success';
+                    
+                    $directStmt = $conn->prepare("INSERT INTO notification_system 
+                        (user_id, title, message, type) VALUES (?, ?, ?, ?)");
+                    $directStmt->bind_param("isss", $lostUserId, $title, $message, $type);
+                    $directStmt->execute();
+                }
+                
+                if (isset($foundDetails) && isset($foundDetails['user_id'])) {
+                    $foundUserId = $foundDetails['user_id'];
+                    $itemName = $foundDetails['item_name'] ?? 'Item';
+                    $title = 'Match Found for Your Found Item';
+                    $message = "Someone has reported losing a $itemName that matches what you found.";
+                    $type = 'success';
+                    
+                    $directStmt = $conn->prepare("INSERT INTO notification_system 
+                        (user_id, title, message, type) VALUES (?, ?, ?, ?)");
+                    $directStmt->bind_param("isss", $foundUserId, $title, $message, $type);
+                    $directStmt->execute();
+                }
+            } catch (Exception $e) {
+                error_log("Error with direct notifications: " . $e->getMessage());
+                // Continue execution even if notifications fail
+            }
+        }
+
+        // Commit the transaction
+        $conn->commit();
+
+        echo json_encode(["success" => true, "message" => "Items matched successfully"]);
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        $conn->rollback();
+        error_log("Transaction rollback due to error: " . $e->getMessage());
+        echo json_encode(["error" => $e->getMessage()]);
     }
-
-    // Close the statement
-    $stmt->close();
 } else {
     echo json_encode(["error" => "Invalid request method"]);
 }
-
+  
 $conn->close();
 ?>

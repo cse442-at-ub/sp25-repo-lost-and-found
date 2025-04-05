@@ -17,7 +17,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
 } from '@mui/material';
 import { Search, CheckCircle, Pending, Cancel } from '@mui/icons-material';
@@ -29,11 +28,10 @@ interface Item {
   type: 'Lost' | 'Found';
   reportedBy: string;
   date: string;
-  image: string;
+  image: string; // This should be the relative path from the database
   description: string;
   location: string;
   status: 'Matched' | 'Pending Confirmation' | 'No Match'; // Added status field
-  actions: string; // Added actions field
 }
 
 const AdminMatch = () => {
@@ -42,13 +40,14 @@ const AdminMatch = () => {
   const [selectedLost, setSelectedLost] = useState<number | null>(null);
   const [selectedFound, setSelectedFound] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null); // State for selected image
   const [successful, setSuccessful] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
         const response = await fetch('./Backend/getItems.php'); // Fetch items from the backend
-  
         const data = await response.json();
         setItems(data);
       } catch (error) {
@@ -66,6 +65,7 @@ const AdminMatch = () => {
   const handleMatch = async () => {
     if (selectedLost && selectedFound) {
       try {
+        setErrorMessage(null);
         const response = await fetch("./Backend/adminmatch.php", {
           method: 'POST',
           headers: {
@@ -76,6 +76,17 @@ const AdminMatch = () => {
             found_item_id: selectedFound,
           }),
         });
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          // If not JSON, get the text response to show the error
+          const textResponse = await response.text();
+          console.error("Non-JSON response:", textResponse);
+          setSuccessful("error");
+          setErrorMessage("Server returned an invalid response format. Please check server logs.");
+          return;
+        }
 
         const result = await response.json();
 
@@ -91,20 +102,21 @@ const AdminMatch = () => {
           }));
         } else {
           setSuccessful("error");
-          alert(result.error);
+          setErrorMessage(result.error || "Unknown error occurred");
         }
       } catch (error) {
         console.error("There was an error matching the items!", error);
         setSuccessful("error");
-        alert("An error occurred while matching the items.");
+        setErrorMessage("Failed to process the response. There might be an issue with the server.");
       }
     } else {
-      alert("Please select both a lost item and a found item.");
+      setErrorMessage("Please select both a lost item and a found item.");
     }
   };
 
   const handleDialogClose = () => {
     setOpenDialog(false);
+    setSelectedImage(null); // Reset selected image when closing dialog
   };
 
   const filteredItems = items.filter(item =>
@@ -126,6 +138,15 @@ const AdminMatch = () => {
   return (
     <LayoutDefault>
       <Paper sx={{ padding: 4, width: '90%', margin: 'auto', marginTop: 4, borderRadius: 3, boxShadow: 3 }}>
+        {/* Back Button */}
+        <Button 
+          variant="outlined" 
+          color="secondary" 
+          onClick={() => window.history.back()} 
+          sx={{ marginBottom: 2 }}
+        >
+          Back
+        </Button>
         <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#1976d2' }}>
           Admin Lost & Found Match
         </Typography>
@@ -168,7 +189,19 @@ const AdminMatch = () => {
                           onChange={() => setSelectedLost(item.id === selectedLost ? null : item.id)}
                         />
                       </TableCell>
-                      <TableCell><img src={item.image} alt={item.name} width="50" height="50" style={{ borderRadius: '8px' }} /></TableCell>
+                      <TableCell>
+                        <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
+                          View Image
+                        </Button>
+                        <Button 
+                          href={`./Backend/${item.image}`} 
+                          download 
+                          sx={{ marginLeft: 1 }} 
+                          variant="outlined"
+                        >
+                          Download
+                        </Button>
+                      </TableCell>
                       <TableCell>{item.name}</TableCell>
                       <TableCell>{item.reportedBy}</TableCell>
                       <TableCell>{item.date}</TableCell>
@@ -221,7 +254,19 @@ const AdminMatch = () => {
                           onChange={() => setSelectedFound(item.id === selectedFound ? null : item.id)}
                         />
                       </TableCell>
-                      <TableCell><img src={item.image} alt={item.name} width="50" height="50" style={{ borderRadius: '8px' }} /></TableCell>
+                      <TableCell>
+                        <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
+                          View Image
+                        </Button>
+                        <Button 
+                          href={`./Backend/${item.image}`} 
+                          download 
+                          sx={{ marginLeft: 1 }} 
+                          variant="outlined"
+                        >
+                          Download
+                        </Button>
+                      </TableCell>
                       <TableCell>{item.name}</TableCell>
                       <TableCell>{item.reportedBy}</TableCell>
                       <TableCell>{item.date}</TableCell>
@@ -260,15 +305,13 @@ const AdminMatch = () => {
         </Button>
 
         <Dialog open={openDialog} onClose={handleDialogClose}>
-          <DialogTitle>Items Matched</DialogTitle>
+          <DialogTitle>Image Preview</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              The selected lost and found items have been matched and stored in the database.
-            </DialogContentText>
+            {selectedImage && <img src={`./Backend/${selectedImage}`} alt="Preview" style={{ width: '100%', height: 'auto' }} />}
           </DialogContent>
           <DialogActions>
             <Button onClick={handleDialogClose} color="primary">
-              Okay
+              Close
             </Button>
           </DialogActions>
         </Dialog>
@@ -280,7 +323,7 @@ const AdminMatch = () => {
         }
         {successful === "error" && 
           <Typography color="error" align="center" sx={{ marginTop: 2 }}>
-            There was an error matching the items.
+            {errorMessage || "There was an error matching the items."}
           </Typography>
         }
       </Paper>

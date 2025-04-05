@@ -8,87 +8,48 @@ import {
   Typography,
   Box,
   Divider,
-  Button
+  Button,
+  CircularProgress
 } from '@mui/material';
 import { Notifications, NotificationsOff } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router';
-import { useCookies } from 'react-cookie';
 import { useAuth } from './AuthContext';
-
-// Simple notification interface
-interface Notification {
-  id: string;
-  message: string;
-  date: Date;
-  read: boolean;
-}
+import { useNotifications, Notification } from './NotificationService';
 
 const NotificationIcon: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const [cookies] = useCookies(['is_admin', 'session_id']);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [enabled, setEnabled] = useState<boolean>(true);
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      message: 'A lost item matching your description has been found',
-      date: new Date(),
-      read: false
-    },
-    {
-      id: '2',
-      message: 'Your claim request has been approved',
-      date: new Date(Date.now() - 86400000),
-      read: true
-    }
-  ]);
+  
+  // Use our custom notifications hook
+  const { 
+    loading, 
+    notifications, 
+    unreadCount, 
+    fetchNotifications,
+    markAsRead,
+    deleteNotification
+  } = useNotifications();
 
-  // Mock data fetch - replace with your API call
+  // Load notifications when authenticated
   useEffect(() => {
-    // Only fetch notifications if user is logged in
-    if (!isAuthenticated) {
-      return;
+    if (isAuthenticated) {
+      fetchNotifications();
+      
+      // Set up polling every minute to check for new notifications
+      const intervalId = setInterval(() => {
+        fetchNotifications();
+      }, 60000);
+      
+      return () => clearInterval(intervalId);
     }
-    
-    // Simulating a fetch call
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        message: 'A lost item matching your description has been found',
-        date: new Date(),
-        read: false
-      },
-      {
-        id: '2',
-        message: 'Your claim request has been approved',
-        date: new Date(Date.now() - 86400000),
-        read: true
-      }
-    ];
-
-    setNotifications(mockNotifications);
   }, [isAuthenticated]);
 
+  // Check notification settings
   useEffect(() => {
-    // Only load settings if user is logged in
-    if (!isAuthenticated) {
-      return;
-    }
-    
-    try {
-      const storedSettings = localStorage.getItem('notifications');
-      if (storedSettings) {
-        const settings = JSON.parse(storedSettings);
-        const isEnabled = settings.email || settings.sms || settings.push;
-        setEnabled(isEnabled);
-      }
-    } catch (error) {
-      console.error('Error loading notification settings:', error);
-    }
-    
-    const handleSettingsChange = () => {
+    if (isAuthenticated) {
       try {
         const storedSettings = localStorage.getItem('notifications');
         if (storedSettings) {
@@ -99,50 +60,58 @@ const NotificationIcon: React.FC = () => {
       } catch (error) {
         console.error('Error loading notification settings:', error);
       }
-    };
-    
-    window.addEventListener('notificationSettingsChanged', handleSettingsChange);
-    
-    return () => {
-      window.removeEventListener('notificationSettingsChanged', handleSettingsChange);
-    };
+      
+      const handleSettingsChange = () => {
+        try {
+          const storedSettings = localStorage.getItem('notifications');
+          if (storedSettings) {
+            const settings = JSON.parse(storedSettings);
+            const isEnabled = settings.email || settings.sms || settings.push;
+            setEnabled(isEnabled);
+          }
+        } catch (error) {
+          console.error('Error loading notification settings:', error);
+        }
+      };
+      
+      window.addEventListener('notificationSettingsChanged', handleSettingsChange);
+      
+      return () => {
+        window.removeEventListener('notificationSettingsChanged', handleSettingsChange);
+      };
+    }
   }, [isAuthenticated]);
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
+    // Fetch fresh notifications when opening the menu
+    fetchNotifications();
   };
 
   const handleCloseMenu = () => {
     setAnchorEl(null);
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prevNotifications => 
-      prevNotifications.map(notification => 
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read if it's not already read
+    if (!notification.is_read) {
+      await markAsRead(notification.id);
+    }
+    
+    handleCloseMenu();
+    
+    navigate(`/notification-detail/${notification.id}`);
   };
 
-  const deleteNotification = (id: string, event: React.MouseEvent) => {
+  const handleDeleteNotification = async (id: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    setNotifications(prevNotifications => 
-      prevNotifications.filter(notification => notification.id !== id)
-    );
+    await deleteNotification(id);
   };
 
   const handleViewAllNotifications = () => {
     handleCloseMenu();
     navigate('/notifications');
   };
-
-  const handleNotificationClick = (notification: Notification) => {
-    markAsRead(notification.id);
-    handleCloseMenu();
-    navigate(`/notification-detail/${notification.id}`);
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
   
   // Only render the notification icon if user is logged in
   if (!isAuthenticated) {
@@ -177,7 +146,11 @@ const NotificationIcon: React.FC = () => {
         </Typography>
         <Divider />
         
-        {notifications.length === 0 ? (
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : notifications.length === 0 ? (
           <MenuItem disabled>
             <Typography variant="body2" color="text.secondary">
               No notifications
@@ -190,19 +163,24 @@ const NotificationIcon: React.FC = () => {
               onClick={() => handleNotificationClick(notification)}
               sx={{ 
                 whiteSpace: 'normal',
-                backgroundColor: notification.read ? 'transparent' : '#f0f8ff'
+                backgroundColor: notification.is_read ? 'transparent' : '#f0f8ff'
               }}
             >
               <Box sx={{ display: 'flex', width: '100%' }}>
                 <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="body2">{notification.message}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: notification.is_read ? 'normal' : 'bold' }}>
+                    {notification.title}
+                  </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {notification.date.toLocaleString()}
+                    {notification.message}
+                  </Typography>
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    {new Date(notification.created_at).toLocaleString()}
                   </Typography>
                 </Box>
                 <IconButton 
                   size="small" 
-                  onClick={(e) => deleteNotification(notification.id, e)}
+                  onClick={(e) => handleDeleteNotification(notification.id, e)}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>

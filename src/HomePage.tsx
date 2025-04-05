@@ -54,7 +54,7 @@ function HomePage() {
                 <Grid container justifyContent={'center'} spacing={12}>
                     <Grid item size={4}>
                         <Card sx={{ maxWidth: 345 }}>
-                            <CardActionArea>
+                            <CardActionArea onClick={() => {navigate("/report-lost-item")}}>
                                 <CardMedia
                                 component="img"
                                 image={ReportLostItem}
@@ -70,7 +70,7 @@ function HomePage() {
                     </Grid>
                     <Grid item size={4}>
                         <Card sx={{ maxWidth: 345 }}>
-                            <CardActionArea>
+                            <CardActionArea onClick={() => {navigate("/report-found-item")}}>
                                 <CardMedia
                                 component="img"
                                 image={ReportFoundItem}

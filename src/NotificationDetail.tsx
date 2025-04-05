@@ -11,38 +11,29 @@ import {
   Grid,
   Chip,
   Snackbar,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Error as ErrorIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router';
 import LayoutDefault from './LayoutDefault';
 import { Link } from 'react-router';
-import { useCookies } from 'react-cookie';
 import { useAuth } from './components/AuthContext';
-
-// Notification interface
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  date: Date;
-  read: boolean;
-  type: 'success' | 'warning' | 'info';
-  link?: string;
-  details?: string;
-}
+import { getNotification, markAsRead } from './components/NotificationService';
 
 const NotificationDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
-  const [notification, setNotification] = useState<Notification | null>(null);
-  const [loadingNotification, setLoadingNotification] = useState<boolean>(true);
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const [notification, setNotification] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -55,7 +46,7 @@ const NotificationDetail: React.FC = () => {
 
   // Check if user is authenticated, redirect if not
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       setSnackbar({
         open: true,
         message: "Please log in to view notifications",
@@ -63,101 +54,64 @@ const NotificationDetail: React.FC = () => {
       });
       navigate('/login');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // Fetch notification data
   useEffect(() => {
-    // Skip fetch if not authenticated or still checking auth status
-    if (loading || !isAuthenticated) return;
+    if (!isAuthenticated || !id) return;
     
-    // Simulating API call delay
-    const fetchTimeout = setTimeout(() => {
-      // Mock notification data
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          title: 'Item Match Found',
-          message: 'A black wallet matching your lost item description has been found. Check your claim page for more details.',
-          date: new Date(),
-          read: true,
-          type: 'success',
-          link: '/claim',
-          details: 'A black leather wallet with your ID was turned in to our lost and found center on March 23, 2025. The wallet was found near the Student Union building. Please bring your identification to verify ownership when you come to collect your item. Our office is open Monday through Friday from 9 AM to 4 PM.'
-        },
-        {
-          id: '2',
-          title: 'Claim Request Approved',
-          message: 'Your claim request for the lost laptop has been approved. Please visit the office to collect your item.',
-          date: new Date(Date.now() - 86400000),
-          read: true,
-          type: 'success',
-          link: '/claim',
-          details: 'Your claim request for the Dell XPS 13 laptop (Service Tag: ABC123) has been approved. You can collect your item from the campus lost and found office located in the Student Union Room 105. Please bring your university ID and the claim confirmation email. The office is open weekdays from 9 AM to 4 PM.'
-        },
-        {
-          id: '3',
-          title: 'Item Description Update',
-          message: 'We need more information about your lost keys. Please update your report with additional details.',
-          date: new Date(Date.now() - 172800000),
-          read: true,
-          type: 'warning',
-          link: '/report-lost-item',
-          details: 'We have received several sets of keys that match the general description you provided in your lost item report (Case #LF-2345). To help us identify your keys, please update your report with more specific details such as any keychains, the number of keys, distinctive shapes, or markings. This will help us match the correct item to your report.'
-        },
-        {
-          id: '4',
-          title: 'New Lost Items Reported',
-          message: 'Several new items were reported lost in your area. Check if any match items you found.',
-          date: new Date(Date.now() - 259200000),
-          read: true,
-          type: 'info',
-          link: '/report-found-item',
-          details: 'In the past 24 hours, the following items have been reported lost in your campus area: 1) Blue Hydro Flask water bottle with stickers, 2) AirPods Pro in a red case, 3) Computer science textbook, 4) Green North Face backpack. If you have found any of these items, please update your found item report or submit a new one.'
-        },
-        {
-          id: '5',
-          title: 'Account Security',
-          message: 'Your password was changed successfully. If you did not make this change, please contact support immediately.',
-          date: new Date(Date.now() - 345600000),
-          read: true,
-          type: 'warning',
-          link: '/settings',
-          details: 'Your account password was changed on March 20, 2025 at 3:42 PM EST. This change was made using the password reset feature from IP address 192.168.1.1. If you did not initiate this change, please contact our support team immediately at support@lostandfound.edu or call our security hotline at (716) 555-1234.'
+    const fetchNotificationDetail = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await getNotification(id, true); // Mark as read while fetching
+        
+        if (response.success && response.notification) {
+          setNotification(response.notification);
+        } else {
+          setError("Failed to fetch notification details");
+          setSnackbar({
+            open: true,
+            message: "Notification not found",
+            severity: "error"
+          });
         }
-      ];
-
-      const foundNotification = mockNotifications.find(n => n.id === id);
-      if (foundNotification) {
-        setNotification(foundNotification);
-      } else {
+      } catch (err) {
+        setError("An error occurred while fetching the notification");
         setSnackbar({
           open: true,
-          message: "Notification not found",
+          message: "Error loading notification",
           severity: "error"
         });
+      } finally {
+        setLoading(false);
       }
-      setLoadingNotification(false);
-    }, 800);
-
-    return () => clearTimeout(fetchTimeout);
-  }, [id, isAuthenticated, loading]);
+    };
+    
+    fetchNotificationDetail();
+  }, [id, isAuthenticated]);
 
   // Get icon based on notification type
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'success':
-        return <CheckCircleIcon color="success" />;
+        return <CheckCircleIcon />;
       case 'warning':
-        return <WarningIcon color="warning" />;
+        return <WarningIcon />;
+      case 'error':
+        return <ErrorIcon />;
       case 'info':
-        return <InfoIcon color="info" />;
       default:
-        return <InfoIcon color="info" />;
+        return <InfoIcon />;
     }
   };
 
   // Format date for display
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
     return date.toLocaleString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -170,9 +124,42 @@ const NotificationDetail: React.FC = () => {
 
   const handleNavigateToLink = () => {
     if (notification?.link) {
-      navigate(notification.link);
+      // If link exists, navigate to it
+      if (notification.link.startsWith('http')) {
+        // If it's an external link, open in new tab
+        window.open(notification.link, '_blank');
+      } else {
+        // If it's an internal link, use the router
+        navigate(notification.link);
+      }
+    } else {
+      // If no link is provided, show a message
+      setSnackbar({
+        open: true,
+        message: "No additional details available for this notification",
+        severity: "info"
+      });
     }
   };
+  
+  // Only show View Details button if we have a valid link
+  const shouldShowDetailsButton = () => {
+    if (!notification?.link) return false;
+    
+    // Check if link is a valid route
+    // For claim links
+    if (notification.link.includes('/claim-details')) return true;
+    
+    // For match links
+    if (notification.link.includes('/matches')) return true;
+    
+    // For found items
+    if (notification.link.includes('/found-items')) return true;
+    
+    // For any other valid links
+    return notification.link.startsWith('/') || notification.link.startsWith('http');
+  };
+  
 
   return (
     <LayoutDefault>
@@ -198,7 +185,11 @@ const NotificationDetail: React.FC = () => {
 
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-              <Typography>Loading notification details...</Typography>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <Typography color="error">{error}</Typography>
             </Box>
           ) : notification ? (
             <>
@@ -208,7 +199,8 @@ const NotificationDetail: React.FC = () => {
                     width: 56, 
                     height: 56, 
                     bgcolor: notification.type === 'success' ? 'success.main' : 
-                             notification.type === 'warning' ? 'warning.main' : 'info.main' 
+                             notification.type === 'warning' ? 'warning.main' : 
+                             notification.type === 'error' ? 'error.main' : 'info.main' 
                   }}>
                     {getNotificationIcon(notification.type)}
                   </Avatar>
@@ -222,13 +214,14 @@ const NotificationDetail: React.FC = () => {
                       label={notification.type.toUpperCase()} 
                       color={
                         notification.type === 'success' ? 'success' : 
-                        notification.type === 'warning' ? 'warning' : 'info'
+                        notification.type === 'warning' ? 'warning' : 
+                        notification.type === 'error' ? 'error' : 'info'
                       } 
                       size="small"
                       sx={{ mr: 1 }}
                     />
                     <Typography variant="body2" color="text.secondary">
-                      {formatDate(notification.date)}
+                      {formatDate(notification.created_at)}
                     </Typography>
                   </Box>
                 </Grid>
@@ -252,19 +245,8 @@ const NotificationDetail: React.FC = () => {
                   </Paper>
                 </>
               )}
-
-              {notification.link && (
-                <Box sx={{ mt: 3 }}>
-                  <Button 
-                    variant="contained" 
-                    color="primary" 
-                    onClick={handleNavigateToLink}
-                  >
-                    {notification.type === 'success' ? 'View Details' : 
-                     notification.type === 'warning' ? 'Take Action' : 'View More'}
-                  </Button>
-                </Box>
-              )}
+            
+            
             </>
           ) : (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
