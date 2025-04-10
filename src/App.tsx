@@ -30,6 +30,7 @@ import NotificationDashboard from './NotificationDashboard'
 import NotificationDetail from './NotificationDetail'
 import { AuthProvider } from './components/AuthContext'
 import ItemPage from './ItemPage'
+import UserDashboard from './UserDashboard'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -51,7 +52,6 @@ function App() {
         <Route path="/report-lost-item" element={<ReportLostItem />} />
         <Route path="/report-found-item" element={<ReportFoundItem />} />
         <Route path="/claim" element={<ClaimPage />} />
-        <Route path="/claim-item" element={<ClaimPage />} />
         <Route path="/view-item" element={<ItemPage />} />
         <Route path="/admin-claim" element={<AdminClaim />} />
         <Route path="/admin-console" element={<AdminConsole />} />
@@ -60,6 +60,7 @@ function App() {
         <Route path="/admin-match" element={<AdminMatch />} />
         <Route path="/notifications" element={<NotificationDashboard />} />
         <Route path="/notification-detail/:id" element={<NotificationDetail />} />
+        <Route path="/user-dashboard" element={<UserDashboard />} />
       </Routes>
       </HashRouter>
       </AuthProvider>
