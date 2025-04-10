@@ -146,6 +146,19 @@ const NotificationDashboard: React.FC = () => {
     }
   };
 
+  const mockNotifications: Notification[] = [
+    {
+      id: '1',
+      title: 'Item Match Found',
+      message: 'A black wallet matching your lost item description has been found. Please fill out the retrieval form to claim your item.',
+      date: new Date(),
+      read: false,
+      type: 'success',
+      link: '/retrieve-form' // Link to the retrieval form
+    },
+    // ... other notifications
+  ];
+
   return (
     <LayoutDefault>
       <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
