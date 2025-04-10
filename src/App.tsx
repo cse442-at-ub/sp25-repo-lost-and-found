@@ -26,6 +26,7 @@ import AdminConsole from './AdminConsole'
 import ViewMessages from './ViewMessages'
 import NotAdmin from './NotAdmin'
 import AdminMatch from './AdminMatch'
+import RetrieveForm from './RetrieveForm'
 import NotificationDashboard from './NotificationDashboard'
 import NotificationDetail from './NotificationDetail'
 import { AuthProvider } from './components/AuthContext'
@@ -58,6 +59,7 @@ function App() {
         <Route path="/view-messages" element={<ViewMessages />} />
         <Route path="/not-admin" element={<NotAdmin />} />
         <Route path="/admin-match" element={<AdminMatch />} />
+        <Route path="/retrieve-form" element={<RetrieveForm />} />
         <Route path="/notifications" element={<NotificationDashboard />} />
         <Route path="/notification-detail/:id" element={<NotificationDetail />} />
       </Routes>

@@ -155,6 +155,8 @@ const NotificationDetail: React.FC = () => {
     
     // For found items
     if (notification.link.includes('/found-items')) return true;
+
+    if (notification.link.includes('/retrieve-form')) return true;
     
     // For any other valid links
     return notification.link.startsWith('/') || notification.link.startsWith('http');
