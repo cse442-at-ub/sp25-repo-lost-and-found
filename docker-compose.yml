@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+
+  frontend:
+    image: node:latest
+    working_dir: /home/node/app
+    expose:
+      - "5173"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/home/node/app
+    command: "npx vite --host"
+    depends_on:
+      - backend
+    networks:
+      - lost_and_found
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"
+    volumes:
+      - ./Backend:/var/www/html/
+    depends_on:
+      - db
+    networks:
+      - lost_and_found
+
+  db:
+    image: mysql:latest
+    container_name: db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: cse442_2025_spring_team_s_db
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - lost_and_found
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      - db
+    networks:
+      - lost_and_found
+
+networks:
+  lost_and_found:
+    driver: bridge
+
+volumes:
+  db_data:
