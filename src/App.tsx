@@ -31,6 +31,7 @@ import NotificationDashboard from './NotificationDashboard'
 import NotificationDetail from './NotificationDetail'
 import { AuthProvider } from './components/AuthContext'
 import ItemPage from './ItemPage'
+import AdminRetrieve from './AdminRetrieve'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -59,6 +60,7 @@ function App() {
         <Route path="/view-messages" element={<ViewMessages />} />
         <Route path="/not-admin" element={<NotAdmin />} />
         <Route path="/admin-match" element={<AdminMatch />} />
+        <Route path="/admin-retrieve" element={<AdminRetrieve />} />
         <Route path="/retrieve-form" element={<RetrieveForm />} />
         <Route path="/notifications" element={<NotificationDashboard />} />
         <Route path="/notification-detail/:id" element={<NotificationDetail />} />
