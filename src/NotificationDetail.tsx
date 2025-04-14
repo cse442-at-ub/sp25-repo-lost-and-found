@@ -247,6 +247,19 @@ const NotificationDetail: React.FC = () => {
                   </Paper>
                 </>
               )}
+              {notification.title === "Item Match Found" && (
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    size="large"
+                    onClick={() => navigate('/retrieve-form')}
+                    sx={{ px: 4, py: 1.5 }}
+                  >
+                    Fill Out Retrieval Form
+                  </Button>
+                </Box>
+              )}
             
             
             </>
