@@ -18,9 +18,15 @@ import {
   Alert,
   Box,
   Chip,
+  Snackbar,
+  Select,
+  FormControl,
+  InputLabel,
+  MenuItem,
 } from "@mui/material";
 
 const API_URL = "./Backend/adminRetrieve.php";
+const UPDATE_STATUS_URL = "./Backend/updateRetrieveStatus.php";
 const IMAGE_BASE_URL = "./Backend/";
 
 interface RetrieveRequest {
@@ -48,43 +54,93 @@ interface RetrieveRequest {
   location_found: string;
 }
 
+const STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'ready for pickup', label: 'Ready for Pickup' },
+  { value: 'sent via mail', label: 'Sent via Mail' },
+];
+
 function AdminRetrieve() {
   const [retrievals, setRetrievals] = useState<RetrieveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<RetrieveRequest | null>(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   useEffect(() => {
-    const fetchRetrievals = async () => {
-      try {
-        const response = await fetch(API_URL);
-        const data = await response.json();
-        
-        if (data.success) {
-          setRetrievals(data.data);
-        } else {
-          setError(data.error || 'Failed to fetch retrieval requests');
-        }
-      } catch (err) {
-        setError('Error connecting to the server');
-        console.error('Error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRetrievals();
   }, []);
+
+  const fetchRetrievals = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      
+      if (data.success) {
+        setRetrievals(data.data);
+      } else {
+        setError(data.error || 'Failed to fetch retrieval requests');
+      }
+    } catch (err) {
+      setError('Error connecting to the server');
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStatus = async (request: RetrieveRequest, newStatus: string) => {
+    try {
+      const response = await fetch(UPDATE_STATUS_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: request.id,
+          status: newStatus,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setRetrievals(prevRetrievals =>
+          prevRetrievals.map(r =>
+            r.id === request.id
+              ? { ...r, status: newStatus }
+              : r
+          )
+        );
+        setSnackbar({
+          open: true,
+          message: 'Status updated successfully',
+          severity: 'success',
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: data.error || 'Failed to update status',
+          severity: 'error',
+        });
+      }
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: 'Error updating status',
+        severity: 'error',
+      });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'pending':
         return 'warning';
-      case 'approved':
+      case 'ready for pickup':
         return 'success';
-      case 'completed':
+      case 'sent via mail':
         return 'info';
-      case 'denied':
-        return 'error';
       default:
         return 'default';
     }
@@ -124,6 +180,7 @@ function AdminRetrieve() {
               <TableCell>Claimant Information</TableCell>
               <TableCell>Delivery Information</TableCell>
               <TableCell>Additional Details</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -185,11 +242,40 @@ function AdminRetrieve() {
                     )}
                   </Box>
                 </TableCell>
+                <TableCell>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={retrieval.status || 'pending'}
+                      onChange={(e) => updateStatus(retrieval, e.target.value)}
+                      size="small"
+                    >
+                      {STATUS_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </LayoutDefault>
   );
 }
