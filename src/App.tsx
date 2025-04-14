@@ -26,12 +26,14 @@ import AdminConsole from './AdminConsole'
 import ViewMessages from './ViewMessages'
 import NotAdmin from './NotAdmin'
 import AdminMatch from './AdminMatch'
+import RetrieveForm from './RetrieveForm'
 import NotificationDashboard from './NotificationDashboard'
 import NotificationDetail from './NotificationDetail'
 import { AuthProvider } from './components/AuthContext'
 import ItemPage from './ItemPage'
 import UserDashboard from './UserDashboard'
 import DeleteAndEditByID from './deleteandeditbyID'
+import AdminRetrieve from './AdminRetrieve'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -59,10 +61,14 @@ function App() {
         <Route path="/view-messages" element={<ViewMessages />} />
         <Route path="/not-admin" element={<NotAdmin />} />
         <Route path="/admin-match" element={<AdminMatch />} />
+        <Route path="/admin-retrieve" element={<AdminRetrieve />} />
+        <Route path="/retrieve-form" element={<RetrieveForm />} />
         <Route path="/notifications" element={<NotificationDashboard />} />
         <Route path="/notification-detail/:id" element={<NotificationDetail />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/edit/:type/:id" element={<DeleteAndEditByID />} />
+        <Route path="/admin-retrieve" element={<AdminRetrieve />} />
+        
       </Routes>
       </HashRouter>
       </AuthProvider>
