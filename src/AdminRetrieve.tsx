@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Alert,
   Box,
+  Chip,
 } from "@mui/material";
 
 const API_URL = "./Backend/adminRetrieve.php";
@@ -37,6 +38,7 @@ interface RetrieveRequest {
   zipcode: string;
   pickup_location: string;
   submitted_at: string;
+  status: string;
   first_name: string;
   last_name: string;
   user_email: string;
@@ -72,6 +74,21 @@ function AdminRetrieve() {
 
     fetchRetrievals();
   }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return 'warning';
+      case 'approved':
+        return 'success';
+      case 'completed':
+        return 'info';
+      case 'denied':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
 
   if (loading) {
     return (
@@ -154,6 +171,14 @@ function AdminRetrieve() {
                 </TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2"><strong>Status:</strong></Typography>
+                      <Chip 
+                        label={retrieval.status || 'Pending'} 
+                        color={getStatusColor(retrieval.status) as any}
+                        size="small"
+                      />
+                    </Box>
                     <Typography variant="body2"><strong>Submitted:</strong> {new Date(retrieval.submitted_at).toLocaleString()}</Typography>
                     {retrieval.additional_instructions && (
                       <Typography variant="body2"><strong>Instructions:</strong> {retrieval.additional_instructions}</Typography>
