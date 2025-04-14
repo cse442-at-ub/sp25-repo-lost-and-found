@@ -31,6 +31,8 @@ import NotificationDashboard from './NotificationDashboard'
 import NotificationDetail from './NotificationDetail'
 import { AuthProvider } from './components/AuthContext'
 import ItemPage from './ItemPage'
+import UserDashboard from './UserDashboard'
+import DeleteAndEditByID from './deleteandeditbyID'
 import AdminRetrieve from './AdminRetrieve'
 
 function App() {
@@ -53,7 +55,6 @@ function App() {
         <Route path="/report-lost-item" element={<ReportLostItem />} />
         <Route path="/report-found-item" element={<ReportFoundItem />} />
         <Route path="/claim" element={<ClaimPage />} />
-        <Route path="/claim-item" element={<ClaimPage />} />
         <Route path="/view-item" element={<ItemPage />} />
         <Route path="/admin-claim" element={<AdminClaim />} />
         <Route path="/admin-console" element={<AdminConsole />} />
@@ -64,6 +65,10 @@ function App() {
         <Route path="/retrieve-form" element={<RetrieveForm />} />
         <Route path="/notifications" element={<NotificationDashboard />} />
         <Route path="/notification-detail/:id" element={<NotificationDetail />} />
+        <Route path="/user-dashboard" element={<UserDashboard />} />
+        <Route path="/edit/:type/:id" element={<DeleteAndEditByID />} />
+        <Route path="/admin-retrieve" element={<AdminRetrieve />} />
+        
       </Routes>
       </HashRouter>
       </AuthProvider>
