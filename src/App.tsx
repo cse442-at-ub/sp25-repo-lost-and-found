@@ -31,6 +31,7 @@ import NotificationDashboard from './NotificationDashboard'
 import NotificationDetail from './NotificationDetail'
 import { AuthProvider } from './components/AuthContext'
 import ItemPage from './ItemPage'
+import MyItemsPage from './MyItemsPage'
 import UserDashboard from './UserDashboard'
 import DeleteAndEditByID from './deleteandeditbyID'
 import AdminRetrieve from './AdminRetrieve'
@@ -65,10 +66,10 @@ function App() {
         <Route path="/retrieve-form" element={<RetrieveForm />} />
         <Route path="/notifications" element={<NotificationDashboard />} />
         <Route path="/notification-detail/:id" element={<NotificationDetail />} />
+        <Route path="/my-items" element={<MyItemsPage />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/edit/:type/:id" element={<DeleteAndEditByID />} />
         <Route path="/admin-retrieve" element={<AdminRetrieve />} />
-        
       </Routes>
       </HashRouter>
       </AuthProvider>
