@@ -109,8 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'Item Match Found',
                         "A $itemName matching your lost item description has been found.",
                         'success',
-                        $retrievalFormLink,
-                        "/claim?item=$lost_item_id",
+                        "/retrieve-form",
                         "Good news! We've found an item that matches your lost $itemName. Please visit the claim page to verify and claim your item. Please submit the retrieval form to verify and claim your item."
                     );
                     error_log("createNotification result for lost user $lostUserId: " . ($notifyResult ? "Success (ID: $notifyResult)" : "Failed"));
