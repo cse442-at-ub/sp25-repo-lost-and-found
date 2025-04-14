@@ -17,7 +17,7 @@ import { useCookies } from 'react-cookie';
 import NotificationIcon from './NotificationIcon';
 import { useAuth } from './AuthContext';
 
-const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'My Items', 'About Us', 'Settings', 'Contact Us'];
+const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'Claim Item', 'My Items', 'About Us', 'Settings', 'Contact Us'];
 
 function ResponsiveAppBar() {
   const navigate = useNavigate();

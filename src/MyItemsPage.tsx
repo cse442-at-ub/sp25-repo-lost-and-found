@@ -19,9 +19,10 @@ import {
   TextField,
   IconButton,
   Tabs,
-  Tab
+  Tab,
+  Snackbar
 } from '@mui/material';
-import { Edit, Delete, Warning } from '@mui/icons-material';
+import { Edit, Delete, Warning, ArrowBack, FindInPage } from '@mui/icons-material';
 import LayoutDefault from './LayoutDefault';
 import { useNavigate } from 'react-router';
 import { useAuth } from './components/AuthContext';
@@ -35,7 +36,8 @@ interface UserItem {
   location: string;
   description: string;
   image?: string;
-  is_deleted: number;
+  status?: string;
+  is_deleted?: number;
 }
 
 function MyItemsPage() {
@@ -55,10 +57,16 @@ function MyItemsPage() {
     location: '',
     description: ''
   });
+  const [newImage, setNewImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   // States for the delete confirmation modal
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<UserItem | null>(null);
+  
+  // State for the mark as found confirmation modal
+  const [markAsFoundOpen, setMarkAsFoundOpen] = useState(false);
+  const [markAsFoundItem, setMarkAsFoundItem] = useState<UserItem | null>(null);
   
   // State for alerts
   const [alert, setAlert] = useState({
@@ -83,11 +91,11 @@ function MyItemsPage() {
         setLoading(true);
         
         const response = await fetch('./Backend/getUserItems.php', {
-          credentials: 'include' // Include cookies for session
+          credentials: 'include' // Important for sending cookies/session data
         });
         
         if (!response.ok) {
-          throw new Error(`Server responded with status: ${response.status}`);
+          throw new Error(`Failed to fetch items (Status: ${response.status})`);
         }
         
         const data = await response.json();
@@ -95,10 +103,10 @@ function MyItemsPage() {
         if (data.success) {
           setItems(data.items || []);
         } else {
-          setError(data.message || 'Failed to load your items');
+          setError(data.message || 'Unknown error occurred while fetching your items');
         }
-      } catch (error) {
-        console.error('Error fetching items:', error);
+      } catch (err) {
+        console.error('Error fetching items:', err);
         setError('Failed to load your items. Please try again later.');
       } finally {
         setLoading(false);
@@ -122,6 +130,8 @@ function MyItemsPage() {
       location: item.location,
       description: item.description
     });
+    setImagePreview(item.image ? `./Backend/${item.image}` : null);
+    setNewImage(null);
     setEditOpen(true);
   };
   
@@ -129,6 +139,19 @@ function MyItemsPage() {
   const handleEditClose = () => {
     setEditOpen(false);
     setEditItem(null);
+    setNewImage(null);
+    setImagePreview(null);
+  };
+  
+  // Handle image file selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewImage(file);
+      // Create a preview URL for the image
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
   };
   
   // Handle form input changes
@@ -140,57 +163,116 @@ function MyItemsPage() {
     }));
   };
   
-  // Save edited item
+  // Save edited item to backend
   const handleSaveEdit = async () => {
     if (!editItem) return;
     
     try {
-      const response = await fetch('./Backend/updateUserItem.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: editItem.id,
-          item_type: editItem.item_type,
-          action: 'edit',
-          ...editFormData
-        }),
-        credentials: 'include'
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Update the item in the state
-        setItems(prevItems => prevItems.map(item => 
-          (item.id === editItem.id && item.item_type === editItem.item_type) 
-            ? { ...item, ...editFormData } 
-            : item
-        ));
+      // If we have a new image, we need to use FormData instead of JSON
+      if (newImage) {
+        const formData = new FormData();
+        formData.append('id', editItem.id.toString());
+        formData.append('item_type', editItem.item_type);
+        formData.append('action', 'edit');
+        formData.append('item_name', editFormData.item_name);
+        formData.append('date', editFormData.date);
+        formData.append('location', editFormData.location);
+        formData.append('description', editFormData.description);
+        formData.append('image', newImage);
         
-        setAlert({
-          open: true,
-          message: 'Item updated successfully',
-          severity: 'success'
+        const response = await fetch('./Backend/updateUserItem.php', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
         });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Update local state to reflect changes, including the new image path
+          setItems(prevItems => prevItems.map(item => 
+            (item.id === editItem.id && item.item_type === editItem.item_type) 
+              ? { 
+                  ...item, 
+                  item_name: editFormData.item_name,
+                  date: editFormData.date,
+                  location: editFormData.location,
+                  description: editFormData.description,
+                  image: data.image_path || item.image // Use new image path if provided
+                } 
+              : item
+          ));
+          
+          setAlert({
+            open: true,
+            message: 'Item updated successfully',
+            severity: 'success'
+          });
+        } else {
+          setAlert({
+            open: true,
+            message: data.message || 'Failed to update item',
+            severity: 'error'
+          });
+        }
       } else {
-        setAlert({
-          open: true,
-          message: data.message || 'Failed to update item',
-          severity: 'error'
+        // No new image, just use JSON
+        const response = await fetch('./Backend/updateUserItem.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: editItem.id,
+            item_type: editItem.item_type,
+            action: 'edit',
+            item_name: editFormData.item_name,
+            date: editFormData.date,
+            location: editFormData.location,
+            description: editFormData.description
+          }),
+          credentials: 'include'
         });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // Update local state to reflect changes
+          setItems(prevItems => prevItems.map(item => 
+            (item.id === editItem.id && item.item_type === editItem.item_type) 
+              ? { 
+                  ...item, 
+                  item_name: editFormData.item_name,
+                  date: editFormData.date,
+                  location: editFormData.location,
+                  description: editFormData.description 
+                } 
+              : item
+          ));
+          
+          setAlert({
+            open: true,
+            message: 'Item updated successfully',
+            severity: 'success'
+          });
+        } else {
+          setAlert({
+            open: true,
+            message: data.message || 'Failed to update item',
+            severity: 'error'
+          });
+        }
       }
     } catch (error) {
       console.error('Error updating item:', error);
       setAlert({
         open: true,
-        message: 'An error occurred while updating the item',
+        message: 'Error updating item. Please try again later.',
         severity: 'error'
       });
-    } finally {
-      handleEditClose();
     }
+    
+    handleEditClose();
   };
   
   // Open delete confirmation modal
@@ -205,7 +287,7 @@ function MyItemsPage() {
     setDeleteItem(null);
   };
   
-  // Delete item (soft delete)
+  // Delete item (archive)
   const handleConfirmDelete = async () => {
     if (!deleteItem) return;
     
@@ -226,33 +308,95 @@ function MyItemsPage() {
       const data = await response.json();
       
       if (data.success) {
-        // Update the item's deleted status in state (or remove it)
+        // Remove item from local state
         setItems(prevItems => prevItems.filter(item => 
           !(item.id === deleteItem.id && item.item_type === deleteItem.item_type)
         ));
         
         setAlert({
           open: true,
-          message: 'Item deleted successfully',
+          message: 'Item archived successfully',
           severity: 'success'
         });
       } else {
         setAlert({
           open: true,
-          message: data.message || 'Failed to delete item',
+          message: data.message || 'Failed to archive item',
           severity: 'error'
         });
       }
     } catch (error) {
-      console.error('Error deleting item:', error);
+      console.error('Error archiving item:', error);
       setAlert({
         open: true,
-        message: 'An error occurred while deleting the item',
+        message: 'Error archiving item. Please try again later.',
         severity: 'error'
       });
-    } finally {
-      handleDeleteClose();
     }
+    
+    handleDeleteClose();
+  };
+  
+  // Open mark as found confirmation modal
+  const handleMarkAsFoundOpen = (item: UserItem) => {
+    setMarkAsFoundItem(item);
+    setMarkAsFoundOpen(true);
+  };
+  
+  // Close mark as found confirmation modal
+  const handleMarkAsFoundClose = () => {
+    setMarkAsFoundOpen(false);
+    setMarkAsFoundItem(null);
+  };
+  
+  // Mark item as found (update status and archive)
+  const handleConfirmMarkAsFound = async () => {
+    if (!markAsFoundItem) return;
+    
+    try {
+      const response = await fetch('./Backend/updateUserItem.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: markAsFoundItem.id,
+          item_type: 'lost', // This will always be a lost item being marked as found
+          action: 'mark_found'
+        }),
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Remove item from local state since it's archived
+        setItems(prevItems => prevItems.filter(item => 
+          !(item.id === markAsFoundItem.id && item.item_type === 'lost')
+        ));
+        
+        setAlert({
+          open: true,
+          message: 'Item marked as found and archived successfully',
+          severity: 'success'
+        });
+      } else {
+        setAlert({
+          open: true,
+          message: data.message || 'Failed to mark item as found',
+          severity: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error marking item as found:', error);
+      setAlert({
+        open: true,
+        message: 'Error marking item as found. Please try again later.',
+        severity: 'error'
+      });
+    }
+    
+    handleMarkAsFoundClose();
   };
   
   // Filter items based on tab
@@ -276,9 +420,19 @@ function MyItemsPage() {
   return (
     <LayoutDefault>
       <Box sx={{ maxWidth: 1200, margin: 'auto', p: 3 }}>
-        <Typography variant="h3" sx={{ mb: 3, textAlign: 'center' }}>
-          My Items
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Button 
+            variant="outlined" 
+            startIcon={<ArrowBack />} 
+            onClick={() => navigate('/dashboard')}
+            sx={{ mr: 2 }}
+          >
+            Back to Dashboard
+          </Button>
+          <Typography variant="h3" sx={{ textAlign: 'center', flexGrow: 1 }}>
+            My Items
+          </Typography>
+        </Box>
         
         <Paper sx={{ mb: 3 }}>
           <Tabs 
@@ -352,11 +506,25 @@ function MyItemsPage() {
                     </Typography>
                     
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                      {/* Mark as Found button (only for lost items) */}
+                      {item.item_type === 'lost' && (
+                        <IconButton 
+                          color="success" 
+                          onClick={() => handleMarkAsFoundOpen(item)}
+                          size="small"
+                          sx={{ mr: 1 }}
+                          title="Mark as Found"
+                        >
+                          <FindInPage />
+                        </IconButton>
+                      )}
+                      
                       <IconButton 
                         color="primary" 
                         onClick={() => handleEditOpen(item)}
                         size="small"
                         sx={{ mr: 1 }}
+                        title="Edit"
                       >
                         <Edit />
                       </IconButton>
@@ -364,6 +532,7 @@ function MyItemsPage() {
                         color="error" 
                         onClick={() => handleDeleteOpen(item)}
                         size="small"
+                        title="Archive"
                       >
                         <Delete />
                       </IconButton>
@@ -429,7 +598,57 @@ function MyItemsPage() {
               variant="outlined"
               value={editFormData.description}
               onChange={handleInputChange}
+              sx={{ mb: 3 }}
             />
+            
+            {/* Image Upload Section */}
+            <Typography variant="subtitle1" gutterBottom>
+              Item Image
+            </Typography>
+            
+            {/* Current/Preview Image */}
+            {imagePreview && (
+              <Box sx={{ mt: 1, mb: 2, textAlign: 'center' }}>
+                <img 
+                  src={imagePreview} 
+                  alt="Item Preview" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '200px', 
+                    objectFit: 'contain',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    padding: '8px',
+                    backgroundColor: '#f5f5f5'
+                  }} 
+                />
+              </Box>
+            )}
+            
+            {/* Image Upload Button */}
+            <Box sx={{ mt: 1 }}>
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="image-upload-button"
+                type="file"
+                onChange={handleImageChange}
+              />
+              <label htmlFor="image-upload-button">
+                <Button 
+                  component="span" 
+                  variant="outlined" 
+                  fullWidth
+                >
+                  {imagePreview ? "Change Image" : "Upload Image"}
+                </Button>
+              </label>
+            </Box>
+            {newImage && (
+              <Typography variant="caption" color="text.secondary">
+                Selected file: {newImage.name}
+              </Typography>
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={handleEditClose}>Cancel</Button>
@@ -442,20 +661,42 @@ function MyItemsPage() {
           <DialogTitle>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Warning color="warning" sx={{ mr: 1 }} />
-              Confirm Deletion
+              Archive Item
             </Box>
           </DialogTitle>
           <DialogContent>
             <Typography variant="body1">
-              Are you sure you want to delete this {deleteItem?.item_type} item "{deleteItem?.item_name}"?
+              Are you sure you want to archive this {deleteItem?.item_type} item "{deleteItem?.item_name}"?
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              This action cannot be undone.
+              This action will remove the item from active listings.
             </Typography>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleDeleteClose}>Cancel</Button>
-            <Button onClick={handleConfirmDelete} variant="contained" color="error">Delete</Button>
+            <Button onClick={handleConfirmDelete} variant="contained" color="error">Archive</Button>
+          </DialogActions>
+        </Dialog>
+        
+        {/* Mark as Found Confirmation Dialog */}
+        <Dialog open={markAsFoundOpen} onClose={handleMarkAsFoundClose}>
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <FindInPage color="success" sx={{ mr: 1 }} />
+              Mark as Found
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1">
+              Are you sure you want to mark "{markAsFoundItem?.item_name}" as found?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              This will archive the lost item and update its status to found.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleMarkAsFoundClose}>Cancel</Button>
+            <Button onClick={handleConfirmMarkAsFound} variant="contained" color="success">Mark as Found</Button>
           </DialogActions>
         </Dialog>
         

@@ -5,8 +5,8 @@ header('Content-Type: application/json');
 // Database connection
 $host = 'localhost';
 $dbname = 'cse442_2025_spring_team_s_db';
-$username = 'your_username';
-$password = 'your_password';
+$username = 'shanoyah';
+$password = '50400377';
 
 $conn = new mysqli($host, $username, $password, $dbname);
 
