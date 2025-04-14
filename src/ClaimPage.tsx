@@ -12,11 +12,15 @@ import {
   Alert,
   Snackbar,
   Paper,
-  Divider
+  Divider,
+  List,
+  ListItem,
+  ListItemText
 } from '@mui/material';
 import LayoutDefault from './LayoutDefault';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { useAuth } from './components/AuthContext';
+import SendIcon from '@mui/icons-material/Send';
 
 
 interface FoundItem {
@@ -34,6 +38,20 @@ interface ClaimData {
   itemId: number;
   proofOfOwnership: string;
   additionalDetails: string;
+}
+
+interface Message {
+  message_id: number;
+  user_id: number;
+  user_name: string;
+  message: string;
+  created_at: string;
+}
+
+interface ChatResponse {
+  success: boolean;
+  conversation_id: number;
+  messages: Message[];
 }
 
 function ClaimPage() {
@@ -55,7 +73,7 @@ function ClaimPage() {
     const { isAuthenticated, loading: authLoading } = useAuth();
     const [foundItems, setFoundItems] = useState<FoundItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [error, setError] = useState<string>('');
     const [selectedItem, setSelectedItem] = useState<FoundItem | null>(null);
     const [claimData, setClaimData] = useState<ClaimData>({
         itemId: 0,
@@ -67,7 +85,10 @@ function ClaimPage() {
         message: '',
         severity: 'info' as 'error' | 'warning' | 'info' | 'success'
     });
-    const [searchQuery, setSearchQuery] = useState(''); // State for search query
+    const [searchQuery, setSearchQuery] = useState('');
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [conversationId, setConversationId] = useState<number | null>(null);
 
     // Filtered items based on search query
     const filteredItems = foundItems.filter(item =>
@@ -225,6 +246,68 @@ function ClaimPage() {
     // Handle snackbar close
     const handleCloseSnackbar = () => {
         setSnackbar(prev => ({ ...prev, open: false }));
+    };
+
+    useEffect(() => {
+        if (selectedItem) {
+            const fetchMessages = async () => {
+                try {
+                    const response = await fetch(`https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/chat.php?item_id=${selectedItem.id}&item_type=found`);
+                    const data: ChatResponse = await response.json();
+                    
+                    if (data.success) {
+                        setConversationId(data.conversation_id);
+                        setMessages(data.messages);
+                    } else {
+                        setError('Failed to load messages');
+                    }
+                } catch (err) {
+                    setError('Error loading messages');
+                }
+            };
+
+            fetchMessages();
+        } else {
+            // Reset chat state when no item is selected
+            setMessages([]);
+            setNewMessage('');
+            setConversationId(null);
+            setError('');
+        }
+    }, [selectedItem]);
+
+    const handleSendMessage = async () => {
+        if (!newMessage.trim() || !conversationId || !selectedItem) return;
+
+        try {
+            const response = await fetch('https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/chat.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    conversation_id: conversationId,
+                    message: newMessage,
+                }),
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // Refresh messages after sending
+                const messagesResponse = await fetch(`https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/chat.php?item_id=${selectedItem.id}&item_type=found`);
+                const messagesData: ChatResponse = await messagesResponse.json();
+                
+                if (messagesData.success) {
+                    setMessages(messagesData.messages);
+                    setNewMessage('');
+                }
+            } else {
+                setError('Failed to send message');
+            }
+        } catch (err) {
+            setError('Error sending message');
+        }
     };
 
     // If not authenticated, show login message
@@ -495,6 +578,70 @@ function ClaimPage() {
                                 >
                                     SUBMIT CLAIM
                                 </Button>
+
+                                {/* Chat Section */}
+                                <Box sx={{ mt: 4 }}>
+                                    <Typography variant="h6" gutterBottom>
+                                        Chat about this item
+                                    </Typography>
+                                    
+                                    {error && (
+                                        <Typography color="error" gutterBottom>
+                                            {error}
+                                        </Typography>
+                                    )}
+
+                                    <Paper elevation={3} sx={{ height: 300, overflow: 'auto', marginBottom: 2 }}>
+                                        <List>
+                                            {messages.map((message) => (
+                                                <React.Fragment key={message.message_id}>
+                                                    <ListItem>
+                                                        <ListItemText
+                                                            primary={message.user_name}
+                                                            secondary={
+                                                                <>
+                                                                    <Typography component="span" variant="body2" color="text.primary">
+                                                                        {message.message}
+                                                                    </Typography>
+                                                                    <br />
+                                                                    <Typography component="span" variant="caption" color="text.secondary">
+                                                                        {new Date(message.created_at).toLocaleString()}
+                                                                    </Typography>
+                                                                </>
+                                                            }
+                                                        />
+                                                    </ListItem>
+                                                    <Divider />
+                                                </React.Fragment>
+                                            ))}
+                                        </List>
+                                    </Paper>
+
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <TextField
+                                            fullWidth
+                                            variant="outlined"
+                                            placeholder="Type your message..."
+                                            value={newMessage}
+                                            onChange={(e) => setNewMessage(e.target.value)}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    handleSendMessage();
+                                                }
+                                            }}
+                                        />
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={handleSendMessage}
+                                            disabled={!newMessage.trim()}
+                                            endIcon={<SendIcon />}
+                                        >
+                                            Send
+                                        </Button>
+                                    </Box>
+                                </Box>
                             </Paper>
                         </Grid>
                     </Grid>

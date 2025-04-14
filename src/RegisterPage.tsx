@@ -1,42 +1,37 @@
 import React, { useState } from 'react';
 import LayoutDefault from './LayoutDefault';
-import { Box, Button, TextField, Typography } from "@mui/material";
+import { Box, Button, TextField, Typography, useMediaQuery } from "@mui/material";
+import RocketIcon from '@mui/icons-material/Rocket'; // Replace with your actual image or icon
 
 function RegisterPage() {
-  // State variables for input values and error handling
-  const [firstName, setFirstName] = useState<string>("");
-  const [lastName, setLastName] = useState<string>("");
-  const [username, setUsername] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [passwordError, setPasswordError] = useState<boolean>(false);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<boolean>(false);
-  const [emailError, setEmailError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const isMobile = useMediaQuery('(max-width:600px)');
 
-  // Function to validate email format
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Function to validate password requirements
+  const [passwordError, setPasswordError] = useState(false);
+  const [confirmPasswordError, setConfirmPasswordError] = useState(false);
+  const [emailError, setEmailError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const validatePasswordRequirements = (password: string) => {
-    const minLength = password.length >= 8;
-    const hasLowercase = /[a-z]/.test(password);
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const allowedSpecialChars = /[!@#$%^&*()\-_=]/;
-    const hasSpecialChar = allowedSpecialChars.test(password);
-    const isValid = minLength && hasLowercase && hasUppercase && hasNumber && hasSpecialChar;
-
+    const isValid = password.length >= 8 &&
+      /[a-z]/.test(password) &&
+      /[A-Z]/.test(password) &&
+      /\d/.test(password) &&
+      /[!@#$%^&*()\-_=]/.test(password);
     setPasswordError(!isValid);
     return isValid;
   };
 
-  // Function to handle registration
   const handleRegister = async () => {
-    setErrorMessage(""); // Clear previous errors
+    setErrorMessage("");
 
     if (!firstName || !lastName || !username || !email || !password) {
       setErrorMessage("All fields are required.");
@@ -47,12 +42,10 @@ function RegisterPage() {
       setEmailError(true);
       setErrorMessage("Please enter a valid email address.");
       return;
-    } else {
-      setEmailError(false);
-    }
+    } else setEmailError(false);
 
     if (!validatePasswordRequirements(password)) {
-      setErrorMessage("Password does not meet requirements.");
+      setErrorMessage("Password does not meet the requirements.");
       return;
     }
 
@@ -60,12 +53,9 @@ function RegisterPage() {
       setConfirmPasswordError(true);
       setErrorMessage("Passwords do not match.");
       return;
-    } else {
-      setConfirmPasswordError(false);
-    }
+    } else setConfirmPasswordError(false);
 
     try {
-
       const response = await fetch("./Backend/register.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,9 +63,7 @@ function RegisterPage() {
       });
 
       const data = await response.json();
-      if (data.success) {
-        console.log("Registration successful");
-      } else {
+      if (!data.success) {
         setErrorMessage(data.message || "Registration failed.");
       }
     } catch (error) {
@@ -85,94 +73,121 @@ function RegisterPage() {
 
   return (
     <LayoutDefault>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px' }}>
-        <Typography variant="h4">Register</Typography>
-
-        {/* First Name Field */}
-        <TextField 
-          label="First Name" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={firstName} 
-          onChange={(e) => setFirstName(e.target.value)}
-        />
-
-        {/* Last Name Field */}
-        <TextField 
-          label="Last Name" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={lastName} 
-          onChange={(e) => setLastName(e.target.value)}
-        />
-
-        {/* Username Field */}
-        <TextField 
-          label="Username" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={username} 
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        
-        {/* Email Field with Validation */}
-        <TextField 
-          label="Email" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)}
-          error={emailError} 
-        />
-        {emailError && (
-          <Typography sx={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
-            Please enter a valid email address.
+      <Box
+        sx={{
+          display: isMobile ? 'block' : 'flex',
+          minHeight: '100vh',
+          width: '100%',
+        }}
+      >
+        {/* Welcome Left Section */}
+        <Box
+          sx={{
+            background: 'linear-gradient(180deg, #0d47a1, #1976d2)',
+            color: 'white',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 4,
+            borderTopLeftRadius: '12px',
+            borderBottomLeftRadius: '12px',
+          }}
+        >
+          <RocketIcon sx={{ fontSize: 60 }} />
+          <Typography variant="h4" fontWeight="bold" mt={2}>Lost & Found</Typography>
+          <Typography align="center" mt={2} maxWidth="300px">
+            Welcome to Lost & Found! Sign up to get started.
           </Typography>
-        )}
+        </Box>
 
-        {/* Password Field */}
-        <TextField 
-          label="Password" 
-          type="password" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          error={passwordError} 
-        />
-        {passwordError && (
-          <Typography sx={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
-            Password must be at least 8 characters long and contain at least one lowercase letter, 
-            one uppercase letter, one number, and one special character (!@#$%^&*()-=_).
+        {/* Form Right Section */}
+        <Box
+          sx={{
+            flex: 1,
+            backgroundColor: 'white',
+            padding: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            borderTopRightRadius: '12px',
+            borderBottomRightRadius: '12px',
+            boxShadow: isMobile ? 'none' : '0px 4px 20px rgba(0,0,0,0.1)',
+            width: isMobile ? '100%' : 'auto',
+          }}
+        >
+          <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+            Create your account
           </Typography>
-        )}
 
-        {/* Confirm Password Field */}
-        <TextField 
-          label="Confirm Password" 
-          type="password" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          error={confirmPasswordError} 
-        />
-        {confirmPasswordError && (
-          <Typography sx={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
-            Passwords do not match.
-          </Typography>
-        )}
+          <TextField
+            label="First Name"
+            variant="standard"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Last Name"
+            variant="standard"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Username"
+            variant="standard"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="E-mail Address"
+            variant="standard"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            error={emailError}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Password"
+            type="password"
+            variant="standard"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={passwordError}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Confirm Password"
+            type="password"
+            variant="standard"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            error={confirmPasswordError}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
 
-        {/* Error Message */}
-        {errorMessage && (
-          <Typography sx={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
-            {errorMessage}
-          </Typography>
-        )}
+          {errorMessage && (
+            <Typography sx={{ color: 'red', fontSize: '0.9rem', mt: 1, mb: 2 }}>
+              {errorMessage}
+            </Typography>
+          )}
 
-        <Button variant="contained" sx={{ marginTop: '10px' }} onClick={handleRegister}>
-          Sign Up
-        </Button>
+          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+            <Button variant="contained" onClick={handleRegister}>
+              Sign Up
+            </Button>
+            <Button variant="outlined">Sign In</Button>
+          </Box>
+        </Box>
       </Box>
     </LayoutDefault>
   );

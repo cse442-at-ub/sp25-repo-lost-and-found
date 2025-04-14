@@ -35,7 +35,7 @@ try {
             if ($hashedPassword && password_verify($password, $hashedPassword)) {
                 session_start();
                 $_SESSION["user_id"] = $user_id;
-                startSession($is_admin);
+                startSession($user_id, $is_admin);
                 echo json_encode(["success" => true, "message" => "Login successful"]);
             } else {
                 echo json_encode(["success" => false, "message" => "Invalid email or password"]);

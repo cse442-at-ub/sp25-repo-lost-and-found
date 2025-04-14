@@ -11,15 +11,15 @@ function _generateSessionId() {
 }
 
 // Function to start a session
-function startSession($isAdmin = false) {
+function startSession($userId, $isAdmin = false) {
   global $sessionTimeout;
 
   $sessionId = _generateSessionId();
   $isAdminInt = $isAdmin ? 1 : 0; // Convert boolean to integer
 
   $pdo = getDbConnection();
-  $stmt = $pdo->prepare("INSERT INTO sessions (session_id, is_admin) VALUES (?, ?)");
-  $stmt->execute([$sessionId, $isAdminInt]);
+  $stmt = $pdo->prepare("INSERT INTO sessions (session_id, user_id, is_admin) VALUES (?, ?, ?)");
+  $stmt->execute([$sessionId, $userId, $isAdminInt]);
 
   setcookie('session_id', $sessionId, time() + $sessionTimeout, '/', '', false, true);
   // help frontend to identify whether the user is admin, thus should not be HTTPOnly
@@ -92,5 +92,13 @@ function validateSession($shouldBeAdmin = false) {
   setcookie('user_logged_in', 'true', time() + $sessionTimeout, '/', '', false, false);
   
   return $isAdmin;
+}
+
+function validateSessionAndFindUser($shouldBeAdmin = false) {
+  validateSession($shouldBeAdmin);
+  $pdo = getDbConnection();
+  $stmt = $pdo->prepare("SELECT user_id FROM sessions WHERE session_id = ?");
+  $stmt->execute([$_COOKIE['session_id']]);
+  return $stmt->fetch(PDO::FETCH_ASSOC)['user_id'];
 }
 ?>

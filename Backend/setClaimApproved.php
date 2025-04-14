@@ -196,7 +196,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 // Claim was approved
                 $notificationTitle = "Claim Approved";
                 $notificationMessage = "Your claim for the $itemName has been approved!";
-                $notificationDetails = "Congratulations! Your claim has been approved. Please visit our office to retrieve your item. Remember to bring your ID and reference your claim ID #$id.";
+                $notificationDetails = "Congratulations! Your claim has been approved. Please submit the retrieval form to claim your item. Remember to bring your ID and reference your claim ID #$id when you come to pick it up.";
                 $notificationType = "success";
             } else {
                 // Claim was denied
@@ -219,7 +219,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $notificationTitle,
                 $notificationMessage,
                 $notificationType,
-                "/claim-details?id=$id",
+                "/retrieve-form",
                 $notificationDetails
             );
             
