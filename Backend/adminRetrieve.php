@@ -18,7 +18,7 @@ try {
                 fi.location_found
               FROM retrieve_requests rr
               JOIN users u ON rr.user_id = u.user_id
-              JOIN found_items fi ON rr.id = fi.id
+              JOIN found_items fi ON rr.found_item_id = fi.id
               ORDER BY rr.submitted_at DESC";
     
     $stmt = $pdo->prepare($query);
