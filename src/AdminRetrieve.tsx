@@ -16,6 +16,7 @@ import {
   Paper,
   CircularProgress,
   Alert,
+  Box,
 } from "@mui/material";
 
 const API_URL = "./Backend/adminRetrieve.php";
@@ -24,13 +25,9 @@ const IMAGE_BASE_URL = "./Backend/";
 interface RetrieveRequest {
   id: number;
   user_id: number;
-  first_name: string;
-  last_name: string;
-  user_email: string;
-  item_name: string;
-  item_description: string;
-  item_image: string;
-  location_found: string;
+  found_item_id: number;
+  name: string;
+  email: string;
   delivery_method: string;
   preferred_time: string;
   additional_instructions: string;
@@ -40,6 +37,13 @@ interface RetrieveRequest {
   zipcode: string;
   pickup_location: string;
   submitted_at: string;
+  first_name: string;
+  last_name: string;
+  user_email: string;
+  item_name: string;
+  item_description: string;
+  item_image: string;
+  location_found: string;
 }
 
 function AdminRetrieve() {
@@ -99,41 +103,63 @@ function AdminRetrieve() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Item</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Found Location</TableCell>
-              <TableCell>Retrieved By</TableCell>
-              <TableCell>Retrieval Method</TableCell>
-              <TableCell>Retrieval Location</TableCell>
-              <TableCell>Preferred Time</TableCell>
-              <TableCell>Additional Instructions</TableCell>
+              <TableCell>Item Details</TableCell>
+              <TableCell>Claimant Information</TableCell>
+              <TableCell>Delivery Information</TableCell>
+              <TableCell>Additional Details</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {retrievals.map((retrieval) => (
               <TableRow key={retrieval.id}>
                 <TableCell>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <CardMedia
-                      component="img"
-                      src={retrieval.item_image ? `${IMAGE_BASE_URL}${encodeURI(retrieval.item_image)}` : `${IMAGE_BASE_URL}default-item.png`}
-                      alt={retrieval.item_name}
-                      style={{ width: 50, height: 50, marginRight: 10 }}
-                    />
-                    {retrieval.item_name}
-                  </div>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CardMedia
+                        component="img"
+                        src={retrieval.item_image ? `${IMAGE_BASE_URL}${encodeURI(retrieval.item_image)}` : `${IMAGE_BASE_URL}default-item.png`}
+                        alt={retrieval.item_name}
+                        style={{ width: 50, height: 50 }}
+                      />
+                      <Typography variant="subtitle1">{retrieval.item_name}</Typography>
+                    </Box>
+                    <Typography variant="body2"><strong>Description:</strong> {retrieval.item_description}</Typography>
+                    <Typography variant="body2"><strong>Found at:</strong> {retrieval.location_found}</Typography>
+                  </Box>
                 </TableCell>
-                <TableCell>{retrieval.item_description}</TableCell>
-                <TableCell>{retrieval.location_found}</TableCell>
-                <TableCell>{retrieval.first_name} {retrieval.last_name}</TableCell>
-                <TableCell>{retrieval.delivery_method}</TableCell>
                 <TableCell>
-                  {retrieval.delivery_method === 'pickup' 
-                    ? retrieval.pickup_location 
-                    : `${retrieval.address}, ${retrieval.county}, ${retrieval.state} ${retrieval.zipcode}`}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Typography variant="body2"><strong>Name:</strong> {retrieval.name}</Typography>
+                    <Typography variant="body2"><strong>Email:</strong> {retrieval.email}</Typography>
+                    <Typography variant="body2"><strong>User ID:</strong> {retrieval.user_id}</Typography>
+                  </Box>
                 </TableCell>
-                <TableCell>{new Date(retrieval.preferred_time).toLocaleString()}</TableCell>
-                <TableCell>{retrieval.additional_instructions || 'None'}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Typography variant="body2"><strong>Method:</strong> {retrieval.delivery_method}</Typography>
+                    {retrieval.delivery_method === 'pickup' ? (
+                      <Typography variant="body2"><strong>Pickup Location:</strong> {retrieval.pickup_location}</Typography>
+                    ) : (
+                      <>
+                        <Typography variant="body2"><strong>Address:</strong> {retrieval.address}</Typography>
+                        <Typography variant="body2"><strong>City/County:</strong> {retrieval.county}</Typography>
+                        <Typography variant="body2"><strong>State:</strong> {retrieval.state}</Typography>
+                        <Typography variant="body2"><strong>ZIP:</strong> {retrieval.zipcode}</Typography>
+                      </>
+                    )}
+                    {retrieval.preferred_time && (
+                      <Typography variant="body2"><strong>Preferred Time:</strong> {new Date(retrieval.preferred_time).toLocaleString()}</Typography>
+                    )}
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Typography variant="body2"><strong>Submitted:</strong> {new Date(retrieval.submitted_at).toLocaleString()}</Typography>
+                    {retrieval.additional_instructions && (
+                      <Typography variant="body2"><strong>Instructions:</strong> {retrieval.additional_instructions}</Typography>
+                    )}
+                  </Box>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
