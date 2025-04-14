@@ -27,6 +27,8 @@ import LayoutDefault from './LayoutDefault';
 import { useNavigate } from 'react-router';
 import { useAuth } from './components/AuthContext';
 
+const IMAGE_BASE_URL = "./Backend/";
+
 // Interface for all items (both lost and found)
 interface UserItem {
   id: number;
@@ -130,7 +132,7 @@ function MyItemsPage() {
       location: item.location,
       description: item.description
     });
-    setImagePreview(item.image ? `./Backend/${item.image}` : null);
+    setImagePreview(item.image && item.image.trim() !== "" ? `${IMAGE_BASE_URL}${encodeURI(item.image)}`: null);
     setNewImage(null);
     setEditOpen(true);
   };
@@ -189,7 +191,7 @@ function MyItemsPage() {
         const data = await response.json();
         
         if (data.success) {
-          // Update local state to reflect changes, including the new image path
+          // Update local state to reflect changes
           setItems(prevItems => prevItems.map(item => 
             (item.id === editItem.id && item.item_type === editItem.item_type) 
               ? { 
@@ -198,7 +200,7 @@ function MyItemsPage() {
                   date: editFormData.date,
                   location: editFormData.location,
                   description: editFormData.description,
-                  image: data.image_path || item.image // Use new image path if provided
+                  image: data.image_path && data.image_path.trim() !== "" ? data.image_path : "" 
                 } 
               : item
           ));
@@ -478,7 +480,7 @@ function MyItemsPage() {
                   <CardMedia
                     component="img"
                     height="140"
-                    image={item.image ? `./Backend/${item.image}` : "./no-image.png"}
+                    image={item.image && item.image.trim() !== "" ? `${IMAGE_BASE_URL}${encodeURI(item.image)}` : "./no-image.png"}
                     alt={item.item_name}
                     sx={{ objectFit: 'contain', backgroundColor: '#f5f5f5' }}
                   />
