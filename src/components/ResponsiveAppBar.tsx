@@ -17,7 +17,7 @@ import { useCookies } from 'react-cookie';
 import NotificationIcon from './NotificationIcon';
 import { useAuth } from './AuthContext';
 
-const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'Claim Item', 'About Us', 'Settings', 'Contact Us'];
+const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'About Us', 'Settings', 'Contact Us'];
 
 function ResponsiveAppBar() {
   const navigate = useNavigate();
@@ -121,6 +121,13 @@ function ResponsiveAppBar() {
                 </MenuItem>
               ))}
               {
+                isAuthenticated && (
+                <MenuItem key='User Dashboard' onClick={() => {navigate('/user-dashboard')}}>
+                  <Typography sx={{ textAlign: 'center' }}>User Dashboard</Typography>
+                </MenuItem>
+                )
+              }
+              {
                 isAdmin && (
                 <MenuItem key='Admin Console' onClick={() => {navigate('/admin-console')}}>
                   <Typography sx={{ textAlign: 'center' }}>Admin Console</Typography>
@@ -131,7 +138,7 @@ function ResponsiveAppBar() {
           </Box>
           <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
           <Typography
-            variant="h6"
+            variant="h5"
             noWrap
             component="a"
             href="/"
@@ -158,6 +165,15 @@ function ResponsiveAppBar() {
                 {page}
               </Button>
             ))}
+            {
+              isAuthenticated && (
+              <Button
+                key="User Dashboard"
+                onClick={() => {navigate('/user-dashboard')}}
+                sx={{ my: 2, color: 'white', display: 'block' }}
+              >User Dashboard</Button>
+              )
+            }
             {
               isAdmin && (
               <Button
