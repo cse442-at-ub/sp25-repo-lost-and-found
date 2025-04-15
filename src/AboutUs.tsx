@@ -1,151 +1,169 @@
-import React, { useEffect, useState } from 'react'
-import LayoutDefault from './LayoutDefault'
-import { Box, Button, Card, CardActionArea, CardContent, CardMedia, Grid2 as Grid, Typography } from '@mui/material'
-import ReportLostItem from '../public/report-lost-item.png'
-import ReportFoundItem from '../public/report-found-item.png'
-import ClaimItem from '../public/claim-item.png'
-import { useNavigate } from 'react-router'
+import React, { useState } from 'react';
+import { Box, Button, Link, TextField, Typography, CircularProgress, Alert, Checkbox, FormControlLabel } from '@mui/material';
+import LayoutDefault from './LayoutDefault';
+import { useNavigate } from 'react-router';
+import { useAuth } from './components/AuthContext';
 
-function AboutUs() {   
+function LoginPage() {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [agree, setAgree] = useState(false);
     const navigate = useNavigate();
-    const [userInfo, setUserInfo] = useState<any>({});
+    const { checkAuthStatus } = useAuth();
 
-    useEffect(() => {
-        fetch('./Backend/userinfo.php', {
-            credentials: 'include', // Ensures cookies/session are sent with the request
-        })
-        .then(response => response.json())
-        .then(data => setUserInfo(data))
-        .catch(error => console.error('Error fetching user info:', error));
-    }, []);
+    const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-    console.log(userInfo)
-    if(userInfo['error']) {
-        console.log("Not logged in")
-    } else {
-        console.log(userInfo)
-    }
+    const handleLogin = async () => {
+        setError("");
+        setLoading(true);
+        if (!email || !password) {
+            setError('Email and password are required.');
+            setLoading(false);
+            return;
+        }
 
-  return (
-    <>
+        if (!validateEmail(email)) {
+            setError('Invalid email format.');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch('./Backend/login.php', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email.trim(), password: password.trim() }),
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+            console.log("Login Response:", data);
+
+            if (response.ok && data.success) {
+                await checkAuthStatus();
+                navigate('/');
+            } else {
+                setError(data.message || "Invalid credentials.");
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            setError("Server error. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
         <LayoutDefault>
-                <Box sx={{ paddingTop: 4, paddingBottom: 4 }}>
-                    <Grid container spacing={4} alignItems="center" justifyContent="center">
-                        <Grid item xs={12} md={6}>
-                            <Box
-                                component="img"
-                                src="./lost-and-found.png"
-                                alt="Hero Image"
-                                height="100%"
-                                sx={{ borderRadius: 2 }}
-                            />
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6} width="500px">
-                            <Typography variant="h3" component="h1">
-                                Get To Know About Lost and Found Portal
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                            Welcome to Lost and Found Portal! We are a lost and found portal that helps you find lost items like your phone, keys, wallet, or any other valuable items. You can also report your found items here and we will try to connect you with the owner.
-                            </Typography>
-                        </Grid>
-                    </Grid>
-                </Box>
-                
-                <Box sx={{ paddingTop: 4, paddingBottom: 4 }}>
-                    <Grid container spacing={4} alignItems="center" justifyContent="space-between" alignContent="normal" marginLeft={5} marginRight={5}>
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="h3" component="h1">
-                                How It Works
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                            How It Works
-                            Follow these steps to recover your lost items effectively
-                            </Typography>
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6} width="500px">
-                            <Box
-                                component="img"
-                                src="./example-items.png"
-                                alt="Hero Image"
-                                height="100%"
-                                sx={{ borderRadius: 2 }}
-                            />
-                        </Grid>
-                    </Grid>
+            <Box
+                sx={{
+                    display: 'flex',
+                    height: '100vh',
+                    flexDirection: { xs: 'column', md: 'row' },
+                    justifyContent: 'center',
+                    alignItems: 'stretch',
+                    bgcolor: '#f5f5f5',
+                }}
+            >
+                {/* Left Panel */}
+                <Box
+                    sx={{
+                        background: 'linear-gradient(180deg, #0d47a1, #1976d2)',
+                        flex: 1,
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 4,
+                        textAlign: 'center',
+                    }}
+                >
+                    <Typography variant="h4" fontWeight="bold" mb={1}>
+                        Welcome to
+                    </Typography>
+                    <Box component="img" src="/rocket-icon.svg" alt="Logo" sx={{ width: 50, height: 50, mb: 1 }} />
+                    <Typography variant="h5" mb={2}>Lost & Found</Typography>
+                    <Typography variant="body2" maxWidth={300}>
+                        Access your account and hope your items find their home!
+                    </Typography>
                 </Box>
 
-                <Box sx={{ paddingTop: 4 }}>
-                    <Grid container spacing={4} alignItems="center" justifyContent="space-between" marginLeft={5} marginRight={5} textAlign="center">
-                        <Grid item size={{xs: 12, md:3}} flexDirection="column" justifyItems="center">
-                            <Box
-                                    component="img"
-                                    src="./search-icon.png"
-                                    alt="Hero Image"
-                                    height="70px"
-                                    sx={{ borderRadius: 2 }}
-                                />
-                            <Typography variant="h4" component="h1">
-                                Identify the Item
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                                Locate your lost or found item using our search feature.
-                            </Typography>
-                        </Grid>
+                {/* Right Panel */}
+                <Box
+                    sx={{
+                        flex: 1,
+                        bgcolor: 'white',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        px: 4,
+                        py: { xs: 4, md: 8 }
+                    }}
+                >
+                    <Typography variant="h5" mb={2} fontWeight="bold">
+                        Login to your account
+                    </Typography>
 
-                        <Grid item size={{xs: 12, md:3}} flexDirection="column" justifyItems="center">
-                            <Box
-                                    component="img"
-                                    src="./report-icon.png"
-                                    alt="Hero Image"
-                                    height="70px"
-                                    sx={{ borderRadius: 2 }}
-                                />
-                            <Typography variant="h4" component="h1">
-                                Report the Item
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                            Report your lost or found item to us.
-                            </Typography>
-                        </Grid>
-                        
-                        <Grid item size={{xs: 12, md:3}} flexDirection="column" justifyItems="center">
-                            <Box
-                                    component="img"
-                                    src="./claim-icon.png"
-                                    alt="Hero Image"
-                                    height="70px"
-                                    sx={{ borderRadius: 2 }}
-                                />
-                            <Typography variant="h4" component="h1">
-                                Claim the Item
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                            Retrieve your lost item after verification of details.
-                            </Typography>
-                        </Grid>
+                    <TextField
+                        label="E-mail Address"
+                        variant="standard"
+                        fullWidth
+                        sx={{ mb: 2, maxWidth: 400 }}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        error={!!error && error.toLowerCase().includes('email')}
+                        disabled={loading}
+                    />
 
-                        <Grid item size={{xs: 12, md:3}} flexDirection="column" justifyItems="center">
-                            <Box
-                                    component="img"
-                                    src="./reunite-icon.png"
-                                    alt="Hero Image"
-                                    height="70px"
-                                    sx={{ borderRadius: 2 }}
-                                />
-                            <Typography variant="h4" component="h1">
-                                Reunite & Enjoy
+                    <TextField
+                        label="Password"
+                        type="password"
+                        variant="standard"
+                        fullWidth
+                        sx={{ mb: 2, maxWidth: 400 }}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        error={!!error && error.toLowerCase().includes('password')}
+                        disabled={loading}
+                    />
+
+                    {error && <Alert severity="error" sx={{ width: '100%', maxWidth: 400, mb: 2 }}>{error}</Alert>}
+
+                    <FormControlLabel
+                        control={<Checkbox checked={agree} onChange={(e) => setAgree(e.target.checked)} />}
+                        label={
+                            <Typography variant="body2">
+                                By Signing In, I Agree with <Link href="#">Terms & Conditions</Link>
                             </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                            Get back your item and enjoy peace of mind.
-                            </Typography>
-                        </Grid>
-                    </Grid>
+                        }
+                        sx={{ maxWidth: 400, mb: 2 }}
+                    />
+
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        sx={{ maxWidth: 400, mb: 2, py: 1.2 }}
+                        onClick={handleLogin}
+                        disabled={loading || !agree}
+                    >
+                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+                    </Button>
+
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                        Don’t have an account? <Link href="./#/register">Register here</Link>
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Link href="./#/forgot-password">Forgot Password?</Link>
+                    </Typography>
                 </Box>
+            </Box>
         </LayoutDefault>
-    </>
-  )
+    );
 }
 
-export default AboutUs
+export default LoginPage;
