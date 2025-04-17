@@ -7,7 +7,7 @@ import {
   Avatar, Chip, Grid, useTheme, Button
 } from "@mui/material";
 import { Cancel, CheckCircle, Delete, Edit, Pending } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useAuth } from "./components/AuthContext";
 
 function UserDashboard() {
