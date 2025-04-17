@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import {
   TextField,
   Button,
@@ -21,13 +23,40 @@ const FileInput = styled('input')({
   display: 'none',
 });
 
+interface FormData {
+  itemName: string;
+  dateLost: string;
+  location: string;
+  description: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  file?: File;
+}
+
+const schema = yup.object().shape({
+  itemName: yup.string().required('Item name is required'),
+  dateLost: yup.string().required('Date lost is required'),
+  location: yup.string().required('Location is required'),
+  description: yup.string().required('Description is required'),
+  firstName: yup.string().required('First name is required'),
+  lastName: yup.string().required('Last name is required'),
+  email: yup.string().email('Invalid email format').required('Email is required'),
+  phone: yup.string()
+    .matches(/^\d{10}$/, 'Phone number must be 10 digits')
+    .required('Phone number is required'),
+});
+
 function ReportLostItem() {
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
-  const { control, handleSubmit, register, formState: { errors } } = useForm();
-  const [fileUpload, setFileUpload] = useState(null);
-  const [preview, setPreview] = useState("");
-  const [successful, setSuccessful] = useState("");
+  const { control, handleSubmit, register, formState: { errors } } = useForm<FormData>({
+    resolver: yupResolver(schema)
+  });
+  const [fileUpload, setFileUpload] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string>("");
+  const [successful, setSuccessful] = useState<string>("");
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
@@ -40,7 +69,7 @@ function ReportLostItem() {
     }
   }, [isAuthenticated, loading]);
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: FormData) => {
     // If not authenticated, redirect to login
     if (!isAuthenticated) {
       navigate('/login');
@@ -95,8 +124,8 @@ function ReportLostItem() {
     }
   };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
       setFileUpload(file);
       setPreview(URL.createObjectURL(file));
@@ -151,7 +180,7 @@ function ReportLostItem() {
                 label="Item Name"
                 fullWidth
                 required
-                {...register('itemName', { required: 'Item name is required' })}
+                {...register('itemName')}
                 error={!!errors.itemName}
                 helperText={errors.itemName?.message}
                 sx={{ mb: 2 }}
@@ -162,7 +191,7 @@ function ReportLostItem() {
                 type="date"
                 fullWidth
                 InputLabelProps={{ shrink: true }}
-                {...register('dateLost', { required: 'Date is required' })}
+                {...register('dateLost')}
                 error={!!errors.dateLost}
                 helperText={errors.dateLost?.message}
                 sx={{ mb: 2 }}
@@ -172,6 +201,8 @@ function ReportLostItem() {
                 label="Location Last Seen"
                 fullWidth
                 {...register('location')}
+                error={!!errors.location}
+                helperText={errors.location?.message}
                 sx={{ mb: 2 }}
               />
 
@@ -181,6 +212,8 @@ function ReportLostItem() {
                 multiline
                 rows={3}
                 {...register('description')}
+                error={!!errors.description}
+                helperText={errors.description?.message}
                 sx={{ mb: 2 }}
               />
 
@@ -219,7 +252,7 @@ function ReportLostItem() {
                 label="First Name"
                 fullWidth
                 required
-                {...register('firstName', { required: 'First name is required' })}
+                {...register('firstName')}
                 error={!!errors.firstName}
                 helperText={errors.firstName?.message}
                 sx={{ mb: 2 }}
@@ -229,7 +262,7 @@ function ReportLostItem() {
                 label="Last Name"
                 fullWidth
                 required
-                {...register('lastName', { required: 'Last name is required' })}
+                {...register('lastName')}
                 error={!!errors.lastName}
                 helperText={errors.lastName?.message}
                 sx={{ mb: 2 }}
@@ -240,10 +273,7 @@ function ReportLostItem() {
                 type="email"
                 fullWidth
                 required
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: { value: /\S+@\S+\.\S+/, message: 'Invalid email' },
-                })}
+                {...register('email')}
                 error={!!errors.email}
                 helperText={errors.email?.message}
                 sx={{ mb: 2 }}
@@ -253,10 +283,7 @@ function ReportLostItem() {
                 label="Phone Number"
                 fullWidth
                 required
-                {...register('phone', {
-                  required: 'Phone number is required',
-                  pattern: { value: /^\d{10}$/, message: 'Invalid phone number' },
-                })}
+                {...register('phone')}
                 error={!!errors.phone}
                 helperText={errors.phone?.message}
                 sx={{ mb: 2 }}
