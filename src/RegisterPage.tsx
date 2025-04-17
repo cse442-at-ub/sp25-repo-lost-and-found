@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import LayoutDefault from './LayoutDefault';
 import { Box, Button, TextField, Typography, useMediaQuery, Alert } from "@mui/material";
-import RocketIcon from '@mui/icons-material/Rocket'; // Replace with your actual image or icon
+import RocketIcon from '@mui/icons-material/Rocket';
+import { Formik, Form, Field, FormikErrors } from 'formik';
 import * as yup from 'yup';
 
 // Validation schema
@@ -40,68 +41,33 @@ const registerSchema = yup.object().shape({
         .oneOf([yup.ref('password')], 'Passwords must match')
 });
 
-function RegisterPage() {
-  const isMobile = useMediaQuery('(max-width:600px)');
-
-  const [formData, setFormData] = useState({
+const initialValues = {
     firstName: "",
     lastName: "",
     username: "",
     email: "",
     password: "",
     confirmPassword: ""
-  });
+};
 
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [loading, setLoading] = useState(false);
+type FormValues = typeof initialValues & {
+    server?: string;
+};
 
-  const handleInputChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
+function RegisterPage() {
+  const isMobile = useMediaQuery('(max-width:600px)');
 
-  const validateForm = async () => {
-    try {
-      await registerSchema.validate(formData, { abortEarly: false });
-      setErrors({});
-      return true;
-    } catch (err) {
-      if (err instanceof yup.ValidationError) {
-        const newErrors: { [key: string]: string } = {};
-        err.inner.forEach(error => {
-          if (error.path) {
-            newErrors[error.path] = error.message;
-          }
-        });
-        setErrors(newErrors);
-      }
-      return false;
-    }
-  };
-
-  const handleRegister = async () => {
-    setLoading(true);
-    const isValid = await validateForm();
-    
-    if (!isValid) {
-      setLoading(false);
-      return;
-    }
-
+  const handleSubmit = async (values: FormValues, { setSubmitting, setErrors }: any) => {
     try {
       const response = await fetch("./Backend/register.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          username: formData.username.trim(),
-          email: formData.email.trim(),
-          password: formData.password
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
+          username: values.username.trim(),
+          email: values.email.trim(),
+          password: values.password
         }),
       });
 
@@ -112,7 +78,7 @@ function RegisterPage() {
     } catch (error) {
       setErrors({ server: "Server error. Please try again." });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -166,91 +132,103 @@ function RegisterPage() {
             Create your account
           </Typography>
 
-          <TextField
-            label="First Name"
-            variant="standard"
-            value={formData.firstName}
-            onChange={handleInputChange('firstName')}
-            error={!!errors.firstName}
-            helperText={errors.firstName}
-            fullWidth
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
-          <TextField
-            label="Last Name"
-            variant="standard"
-            value={formData.lastName}
-            onChange={handleInputChange('lastName')}
-            error={!!errors.lastName}
-            helperText={errors.lastName}
-            fullWidth
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
-          <TextField
-            label="Username"
-            variant="standard"
-            value={formData.username}
-            onChange={handleInputChange('username')}
-            error={!!errors.username}
-            helperText={errors.username}
-            fullWidth
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
-          <TextField
-            label="E-mail Address"
-            variant="standard"
-            value={formData.email}
-            onChange={handleInputChange('email')}
-            error={!!errors.email}
-            helperText={errors.email}
-            fullWidth
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
-          <TextField
-            label="Password"
-            type="password"
-            variant="standard"
-            value={formData.password}
-            onChange={handleInputChange('password')}
-            error={!!errors.password}
-            helperText={errors.password}
-            fullWidth
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
-          <TextField
-            label="Confirm Password"
-            type="password"
-            variant="standard"
-            value={formData.confirmPassword}
-            onChange={handleInputChange('confirmPassword')}
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword}
-            fullWidth
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
+          <Formik<FormValues>
+            initialValues={initialValues}
+            validationSchema={registerSchema}
+            onSubmit={handleSubmit}
+            validateOnBlur
+            validateOnChange
+          >
+            {({ errors, touched, isSubmitting, isValid, dirty }) => (
+              <Form>
+                <Field
+                  as={TextField}
+                  name="firstName"
+                  label="First Name"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.firstName && Boolean(errors.firstName)}
+                  helperText={touched.firstName && errors.firstName}
+                  disabled={isSubmitting}
+                />
+                <Field
+                  as={TextField}
+                  name="lastName"
+                  label="Last Name"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.lastName && Boolean(errors.lastName)}
+                  helperText={touched.lastName && errors.lastName}
+                  disabled={isSubmitting}
+                />
+                <Field
+                  as={TextField}
+                  name="username"
+                  label="Username"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.username && Boolean(errors.username)}
+                  helperText={touched.username && errors.username}
+                  disabled={isSubmitting}
+                />
+                <Field
+                  as={TextField}
+                  name="email"
+                  label="E-mail Address"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.email && Boolean(errors.email)}
+                  helperText={touched.email && errors.email}
+                  disabled={isSubmitting}
+                />
+                <Field
+                  as={TextField}
+                  name="password"
+                  label="Password"
+                  type="password"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.password && Boolean(errors.password)}
+                  helperText={touched.password && errors.password}
+                  disabled={isSubmitting}
+                />
+                <Field
+                  as={TextField}
+                  name="confirmPassword"
+                  label="Confirm Password"
+                  type="password"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.confirmPassword && Boolean(errors.confirmPassword)}
+                  helperText={touched.confirmPassword && errors.confirmPassword}
+                  disabled={isSubmitting}
+                />
 
-          {errors.server && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {errors.server}
-            </Alert>
-          )}
+                {errors.server && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {errors.server}
+                  </Alert>
+                )}
 
-          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-            <Button 
-              variant="contained" 
-              onClick={handleRegister}
-              disabled={loading}
-            >
-              {loading ? 'Signing Up...' : 'Sign Up'}
-            </Button>
-            <Button variant="outlined" disabled={loading}>Sign In</Button>
-          </Box>
+                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                  <Button 
+                    type="submit"
+                    variant="contained"
+                    disabled={!isValid || !dirty || isSubmitting}
+                  >
+                    {isSubmitting ? 'Signing Up...' : 'Sign Up'}
+                  </Button>
+                  <Button variant="outlined" disabled={isSubmitting}>Sign In</Button>
+                </Box>
+              </Form>
+            )}
+          </Formik>
         </Box>
       </Box>
     </LayoutDefault>
