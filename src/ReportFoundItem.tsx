@@ -4,9 +4,8 @@ import { Box, Button, TextField, Typography, Paper, Grid, IconButton, Snackbar, 
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import { useNavigate } from 'react-router';
 import { useAuth } from './components/AuthContext';
+import { Formik, Form, Field } from 'formik';
 import * as yup from 'yup';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
 
 interface FormValues {
     itemName: string;
@@ -35,6 +34,19 @@ const validationSchema = yup.object({
     image: yup.mixed()
 });
 
+const initialValues: FormValues = {
+    itemName: '',
+    category: '',
+    dateFound: '',
+    location: '',
+    description: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    image: null
+};
+
 function ReportFoundItem() {
     const navigate = useNavigate();
     const { isAuthenticated, loading } = useAuth();
@@ -61,31 +73,9 @@ function ReportFoundItem() {
         message: "",
     });
 
-    const {
-        register,
-        handleSubmit,
-        control,
-        reset,
-        formState: { errors, isSubmitting }
-    } = useForm<FormValues>({
-        resolver: yupResolver(validationSchema),
-        defaultValues: {
-            itemName: '',
-            category: '',
-            dateFound: '',
-            location: '',
-            description: '',
-            firstName: '',
-            lastName: '',
-            email: '',
-            phone: '',
-            image: null
-        }
-    });
-
-    const onSubmit = async (data: FormValues) => {
+    const handleSubmit = async (values: FormValues, { resetForm }: { resetForm: () => void }) => {
         const formData = new FormData();
-        Object.entries(data).forEach(([key, value]) => {
+        Object.entries(values).forEach(([key, value]) => {
             if (value !== null && value !== '') {
                 formData.append(key, value as string | Blob);
             }
@@ -106,7 +96,7 @@ function ReportFoundItem() {
                     message: "Found item reported successfully!",
                     severity: "success"
                 });
-                reset();
+                resetForm();
             } else {
                 setSnackbar({
                     open: true,
@@ -121,12 +111,6 @@ function ReportFoundItem() {
                 message: "An error occurred while submitting the form",
                 severity: "error"
             });
-        }
-    };
-
-    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files[0]) {
-            // You can handle the image file here if needed
         }
     };
 
@@ -173,156 +157,179 @@ function ReportFoundItem() {
                 <Typography variant="h4" gutterBottom>Report Found Item Form</Typography>
 
                 <Paper elevation={3} sx={{ padding: '20px', width: '80%', maxWidth: '600px' }}>
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12}>
-                                <TextField
-                                    label="Item Name"
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    {...register('itemName')}
-                                    error={!!errors.itemName}
-                                    helperText={errors.itemName?.message}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <FormControl fullWidth required error={!!errors.category}>
-                                    <InputLabel id="category-label">Category</InputLabel>
-                                    <Controller
-                                        name="category"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <Select
+                    <Formik
+                        initialValues={initialValues}
+                        validationSchema={validationSchema}
+                        onSubmit={handleSubmit}
+                        validateOnMount={true}
+                    >
+                        {({ errors, touched, isSubmitting, isValid, dirty, setFieldValue }) => (
+                            <Form>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="itemName"
+                                            label="Item Name"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.itemName || dirty) && Boolean(errors.itemName)}
+                                            helperText={(touched.itemName || dirty) && errors.itemName}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControl 
+                                            fullWidth 
+                                            required 
+                                            error={(touched.category || dirty) && Boolean(errors.category)}
+                                        >
+                                            <InputLabel id="category-label">Category</InputLabel>
+                                            <Field
+                                                as={Select}
+                                                name="category"
                                                 labelId="category-label"
-                                                id="category"
                                                 label="Category"
-                                                {...field}
                                             >
                                                 {categoryOptions.map((option) => (
                                                     <MenuItem key={option} value={option}>
                                                         {option}
                                                     </MenuItem>
                                                 ))}
-                                            </Select>
+                                            </Field>
+                                            {(touched.category || dirty) && errors.category && (
+                                                <FormHelperText>{errors.category}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="dateFound"
+                                            label="Date Found"
+                                            type="date"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            InputLabelProps={{
+                                                shrink: true,
+                                            }}
+                                            error={(touched.dateFound || dirty) && Boolean(errors.dateFound)}
+                                            helperText={(touched.dateFound || dirty) && errors.dateFound}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="location"
+                                            label="Location Last Seen"
+                                            variant="outlined"
+                                            fullWidth
+                                            error={(touched.location || dirty) && Boolean(errors.location)}
+                                            helperText={(touched.location || dirty) && errors.location}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="description"
+                                            label="Description"
+                                            multiline
+                                            rows={4}
+                                            variant="outlined"
+                                            fullWidth
+                                            error={(touched.description || dirty) && Boolean(errors.description)}
+                                            helperText={(touched.description || dirty) && errors.description}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="subtitle1">Upload Image:</Typography>
+                                        <input
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            id="raised-button-file"
+                                            type="file"
+                                            onChange={(event) => {
+                                                if (event.currentTarget.files) {
+                                                    setFieldValue("image", event.currentTarget.files[0]);
+                                                }
+                                            }}
+                                        />
+                                        <label htmlFor="raised-button-file">
+                                            <IconButton color="primary" aria-label="upload picture" component="span">
+                                                <PhotoCamera />
+                                            </IconButton>
+                                        </label>
+                                        {(touched.image || dirty) && errors.image && (
+                                            <FormHelperText error>{errors.image}</FormHelperText>
                                         )}
-                                    />
-                                    {errors.category && (
-                                        <FormHelperText>{errors.category.message}</FormHelperText>
-                                    )}
-                                </FormControl>
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    label="Date Found"
-                                    type="date"
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    InputLabelProps={{
-                                        shrink: true,
-                                    }}
-                                    {...register('dateFound')}
-                                    error={!!errors.dateFound}
-                                    helperText={errors.dateFound?.message}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    label="Location Last Seen"
-                                    variant="outlined"
-                                    fullWidth
-                                    {...register('location')}
-                                    error={!!errors.location}
-                                    helperText={errors.location?.message}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    label="Description"
-                                    multiline
-                                    rows={4}
-                                    variant="outlined"
-                                    fullWidth
-                                    {...register('description')}
-                                    error={!!errors.description}
-                                    helperText={errors.description?.message}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <Typography variant="subtitle1">Upload Image:</Typography>
-                                <input
-                                    accept="image/*"
-                                    style={{ display: 'none' }}
-                                    id="raised-button-file"
-                                    type="file"
-                                    onChange={handleImageChange}
-                                />
-                                <label htmlFor="raised-button-file">
-                                    <IconButton color="primary" aria-label="upload picture" component="span">
-                                        <PhotoCamera />
-                                    </IconButton>
-                                </label>
-                            </Grid>
-                            <Grid item xs={12}>
-                                <Typography variant="h6">Contact Information:</Typography>
-                            </Grid>
-                            <Grid item xs={6}>
-                                <TextField
-                                    label="First Name"
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    {...register('firstName')}
-                                    error={!!errors.firstName}
-                                    helperText={errors.firstName?.message}
-                                />
-                            </Grid>
-                            <Grid item xs={6}>
-                                <TextField
-                                    label="Last Name"
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    {...register('lastName')}
-                                    error={!!errors.lastName}
-                                    helperText={errors.lastName?.message}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    label="Email Address"
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    {...register('email')}
-                                    error={!!errors.email}
-                                    helperText={errors.email?.message}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    label="Phone Number"
-                                    variant="outlined"
-                                    fullWidth
-                                    required
-                                    {...register('phone')}
-                                    error={!!errors.phone}
-                                    helperText={errors.phone?.message}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <Button 
-                                    variant="contained" 
-                                    color="primary" 
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                >
-                                    Submit
-                                </Button>
-                            </Grid>
-                        </Grid>
-                    </form>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="h6">Contact Information:</Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Field
+                                            as={TextField}
+                                            name="firstName"
+                                            label="First Name"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.firstName || dirty) && Boolean(errors.firstName)}
+                                            helperText={(touched.firstName || dirty) && errors.firstName}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Field
+                                            as={TextField}
+                                            name="lastName"
+                                            label="Last Name"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.lastName || dirty) && Boolean(errors.lastName)}
+                                            helperText={(touched.lastName || dirty) && errors.lastName}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="email"
+                                            label="Email Address"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.email || dirty) && Boolean(errors.email)}
+                                            helperText={(touched.email || dirty) && errors.email}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="phone"
+                                            label="Phone Number"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.phone || dirty) && Boolean(errors.phone)}
+                                            helperText={(touched.phone || dirty) && errors.phone}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Button 
+                                            variant="contained" 
+                                            color="primary" 
+                                            type="submit"
+                                            disabled={!isValid || isSubmitting}
+                                            fullWidth
+                                        >
+                                            {isSubmitting ? 'Submitting...' : 'Submit'}
+                                        </Button>
+                                    </Grid>
+                                </Grid>
+                            </Form>
+                        )}
+                    </Formik>
                 </Paper>
             </Box>
             <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
