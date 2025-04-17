@@ -3,29 +3,68 @@ import { Box, Button, Link, TextField, Typography, CircularProgress, Alert, Chec
 import LayoutDefault from './LayoutDefault';
 import { useNavigate } from 'react-router';
 import { useAuth } from './components/AuthContext';
+import * as yup from 'yup';
+
+// Validation schema
+const loginSchema = yup.object().shape({
+    email: yup
+        .string()
+        .email('Please enter a valid email address')
+        .required('Email is required'),
+    password: yup
+        .string()
+        .min(6, 'Password must be at least 6 characters')
+        .required('Password is required'),
+    agree: yup
+        .boolean()
+        .oneOf([true], 'You must agree to the terms and conditions')
+        .required('You must agree to the terms and conditions')
+});
 
 function LoginPage() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+        agree: false
+    });
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(false);
-    const [agree, setAgree] = useState(false);
     const navigate = useNavigate();
     const { checkAuthStatus } = useAuth();
 
-    const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const handleInputChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = field === 'agree' ? event.target.checked : event.target.value;
+        setFormData(prev => ({ ...prev, [field]: value }));
+        // Clear error when user starts typing
+        if (errors[field]) {
+            setErrors(prev => ({ ...prev, [field]: '' }));
+        }
+    };
+
+    const validateForm = async () => {
+        try {
+            await loginSchema.validate(formData, { abortEarly: false });
+            setErrors({});
+            return true;
+        } catch (err) {
+            if (err instanceof yup.ValidationError) {
+                const newErrors: { [key: string]: string } = {};
+                err.inner.forEach(error => {
+                    if (error.path) {
+                        newErrors[error.path] = error.message;
+                    }
+                });
+                setErrors(newErrors);
+            }
+            return false;
+        }
+    };
 
     const handleLogin = async () => {
-        setError("");
         setLoading(true);
-        if (!email || !password) {
-            setError('Email and password are required.');
-            setLoading(false);
-            return;
-        }
-
-        if (!validateEmail(email)) {
-            setError('Invalid email format.');
+        const isValid = await validateForm();
+        
+        if (!isValid) {
             setLoading(false);
             return;
         }
@@ -34,7 +73,10 @@ function LoginPage() {
             const response = await fetch('./Backend/login.php', {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: email.trim(), password: password.trim() }),
+                body: JSON.stringify({ 
+                    email: formData.email.trim(), 
+                    password: formData.password.trim() 
+                }),
                 credentials: 'include'
             });
 
@@ -45,11 +87,11 @@ function LoginPage() {
                 await checkAuthStatus();
                 navigate('/');
             } else {
-                setError(data.message || "Invalid credentials.");
+                setErrors({ server: data.message || "Invalid credentials." });
             }
         } catch (error) {
             console.error("Login error:", error);
-            setError("Server error. Please try again.");
+            setErrors({ server: "Server error. Please try again." });
         } finally {
             setLoading(false);
         }
@@ -114,9 +156,10 @@ function LoginPage() {
                         variant="standard"
                         fullWidth
                         sx={{ mb: 2, maxWidth: 400 }}
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        error={!!error && error.toLowerCase().includes('email')}
+                        value={formData.email}
+                        onChange={handleInputChange('email')}
+                        error={!!errors.email}
+                        helperText={errors.email}
                         disabled={loading}
                     />
 
@@ -126,16 +169,26 @@ function LoginPage() {
                         variant="standard"
                         fullWidth
                         sx={{ mb: 2, maxWidth: 400 }}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        error={!!error && error.toLowerCase().includes('password')}
+                        value={formData.password}
+                        onChange={handleInputChange('password')}
+                        error={!!errors.password}
+                        helperText={errors.password}
                         disabled={loading}
                     />
 
-                    {error && <Alert severity="error" sx={{ width: '100%', maxWidth: 400, mb: 2 }}>{error}</Alert>}
+                    {errors.server && (
+                        <Alert severity="error" sx={{ width: '100%', maxWidth: 400, mb: 2 }}>
+                            {errors.server}
+                        </Alert>
+                    )}
 
                     <FormControlLabel
-                        control={<Checkbox checked={agree} onChange={(e) => setAgree(e.target.checked)} />}
+                        control={
+                            <Checkbox 
+                                checked={formData.agree} 
+                                onChange={handleInputChange('agree')}
+                            />
+                        }
                         label={
                             <Typography variant="body2">
                                 By Signing In, I Agree with <Link href="#">Terms & Conditions</Link>
@@ -143,19 +196,24 @@ function LoginPage() {
                         }
                         sx={{ maxWidth: 400, mb: 2 }}
                     />
+                    {errors.agree && (
+                        <Typography color="error" variant="caption" sx={{ mb: 2 }}>
+                            {errors.agree}
+                        </Typography>
+                    )}
 
                     <Button
                         variant="contained"
                         fullWidth
                         sx={{ maxWidth: 400, mb: 2, py: 1.2 }}
                         onClick={handleLogin}
-                        disabled={loading || !agree}
+                        disabled={loading}
                     >
                         {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
                     </Button>
 
                     <Typography variant="body2" sx={{ mt: 1 }}>
-                        Don’t have an account? <Link href="./#/register">Register here</Link>
+                        Don't have an account? <Link href="./#/register">Register here</Link>
                     </Typography>
                     <Typography variant="body2" sx={{ mt: 1 }}>
                         <Link href="./#/forgot-password">Forgot Password?</Link>
