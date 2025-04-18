@@ -43,6 +43,9 @@ const AdminMatch = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null); // State for selected image
   const [successful, setSuccessful] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [openImageDialog, setOpenImageDialog] = useState(false);
+  const [openMatchDialog, setOpenMatchDialog] = useState(false);
+
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -91,7 +94,7 @@ const AdminMatch = () => {
         const result = await response.json();
 
         if (result.success) {
-          setOpenDialog(true);
+          setOpenMatchDialog(true);
           setSuccessful("success");
           // Update the status of matched items
           setItems(prevItems => prevItems.map(item => {
@@ -114,9 +117,12 @@ const AdminMatch = () => {
     }
   };
 
-  const handleDialogClose = () => {
-    setOpenDialog(false);
+  const handleImageDialogClose = () => {
+    setOpenImageDialog(false);
     setSelectedImage(null); // Reset selected image when closing dialog
+  };
+  const handleMatchDialogClose = () => {
+    setOpenMatchDialog(false);
   };
 
   const filteredItems = items.filter(item =>
@@ -190,16 +196,23 @@ const AdminMatch = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
+                        <Button onClick={() => { 
+                          if (item.image){
+                            setSelectedImage(item.image); 
+                          } else {
+                            setSelectedImage(null); 
+                          }
+                          setOpenImageDialog(true); }}>
                           View Image
                         </Button>
                         <Button 
-                          href={`./Backend/${item.image}`} 
+                          href={item.image ? `./Backend/${item.image}` : undefined} 
                           download 
+                          disabled={!item.image}
                           sx={{ marginLeft: 1 }} 
                           variant="outlined"
                         >
-                          Download
+                         Download
                         </Button>
                       </TableCell>
                       <TableCell>{item.name}</TableCell>
@@ -255,13 +268,21 @@ const AdminMatch = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
+                        <Button onClick={() => {
+                          if (item.image) {
+                            setSelectedImage(item.image);
+                          } else {
+                            setSelectedImage(null);
+                          }
+                          setOpenImageDialog(true);
+                        }}>
                           View Image
                         </Button>
-                        <Button 
-                          href={`./Backend/${item.image}`} 
-                          download 
-                          sx={{ marginLeft: 1 }} 
+                        <Button
+                          href={item.image ? `./Backend/${item.image}` : undefined}
+                          download
+                          disabled={!item.image}
+                          sx={{ marginLeft: 1 }}
                           variant="outlined"
                         >
                           Download
@@ -304,17 +325,36 @@ const AdminMatch = () => {
           Match
         </Button>
 
-        <Dialog open={openDialog} onClose={handleDialogClose}>
+        <Dialog open={openImageDialog} onClose={handleImageDialogClose} maxWidth="md">
           <DialogTitle>Image Preview</DialogTitle>
-          <DialogContent>
-            {selectedImage && <img src={`./Backend/${selectedImage}`} alt="Preview" style={{ width: '100%', height: 'auto' }} />}
+          <DialogContent sx={{ textAlign: 'center' }}>
+            {selectedImage ? ( 
+              <img 
+              src={`./Backend/${selectedImage}`} 
+              alt="Item" 
+              style={{ width: '100%' }} 
+              />
+            ) : (
+              <Typography variant="body1" color="textSecondary">
+                No image uploaded for this item.
+              </Typography>
+            )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleDialogClose} color="primary">
-              Close
-            </Button>
+            <Button onClick={handleImageDialogClose}>Close</Button>
           </DialogActions>
         </Dialog>
+
+        <Dialog open={openMatchDialog} onClose={handleMatchDialogClose}>
+          <DialogTitle>Match Successful</DialogTitle>
+          <DialogContent>
+            <Typography>The items have been successfully matched!</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleMatchDialogClose}>OK</Button>
+          </DialogActions>
+        </Dialog>
+
 
         {successful === "success" && 
           <Typography color="success" align="center" sx={{ marginTop: 2 }}>
