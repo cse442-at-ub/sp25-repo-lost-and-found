@@ -1,15 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import LayoutDefault from './LayoutDefault';
-import { Box, Button, TextField, Typography, Paper, Grid, IconButton, Snackbar, Alert, Input, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, Button, TextField, Typography, Paper, Grid, IconButton, Snackbar, Alert, Select, MenuItem, FormControl, InputLabel, FormHelperText } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
-import { useNavigate } from 'react-router'; // Import useNavigate
-import { useAuth } from './components/AuthContext'; // Import useAuth
+import { useNavigate } from 'react-router';
+import { useAuth } from './components/AuthContext';
+import { Formik, Form, Field } from 'formik';
+import * as yup from 'yup';
+
+interface FormValues {
+    itemName: string;
+    category: string;
+    dateFound: string;
+    location: string;
+    description: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    image: File | null;
+}
+
+// Validation schema
+const validationSchema = yup.object({
+    itemName: yup.string().required('Item name is required'),
+    category: yup.string().required('Category is required'),
+    dateFound: yup.date().required('Date found is required'),
+    location: yup.string(),
+    description: yup.string(),
+    firstName: yup.string().required('First name is required'),
+    lastName: yup.string().required('Last name is required'),
+    email: yup.string().email('Enter a valid email').required('Email is required'),
+    phone: yup.string().required('Phone number is required'),
+    image: yup.mixed()
+});
+
+const initialValues: FormValues = {
+    itemName: '',
+    category: '',
+    dateFound: '',
+    location: '',
+    description: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    image: null
+};
 
 function ReportFoundItem() {
-    const navigate = useNavigate(); // Initialize useNavigate
-    const { isAuthenticated, loading } = useAuth(); // Use the auth context
+    const navigate = useNavigate();
+    const { isAuthenticated, loading } = useAuth();
 
-    // Define the missing categoryOptions array
     const categoryOptions = [
         'Electronics',
         'Clothing',
@@ -22,16 +63,6 @@ function ReportFoundItem() {
         'Other'
     ];
 
-    const [itemName, setItemName] = useState('');
-    const [category, setCategory] = useState('');
-    const [dateFound, setDateFound] = useState('');
-    const [location, setLocation] = useState('');
-    const [description, setDescription] = useState('');
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [image, setImage] = useState<File | null>(null);
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
         severity: "error" | "warning" | "info" | "success";
@@ -42,44 +73,19 @@ function ReportFoundItem() {
         message: "",
     });
 
-    // Add the missing handleImageChange function
-    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files[0]) {
-            setImage(event.target.files[0]);
-        }
-    };
-
-    // Add the missing handleSubmit function
-    const handleSubmit = async () => {
-        if (!itemName || !category || !dateFound) {
-            setSnackbar({
-                open: true,
-                message: "Please fill in all required fields",
-                severity: "error"
-            });
-            return;
-        }
-
-        // Create form data to send to backend
+    const handleSubmit = async (values: FormValues, { resetForm }: { resetForm: () => void }) => {
         const formData = new FormData();
-        formData.append('itemName', itemName);
-        formData.append('category', category);
-        formData.append('dateFound', dateFound);
-        formData.append('location', location);
-        formData.append('description', description);
-        formData.append('firstName', firstName);
-        formData.append('lastName', lastName);
-        formData.append('email', email);
-        formData.append('phone', phone);
-        if (image) {
-            formData.append('image', image);
-        }
+        Object.entries(values).forEach(([key, value]) => {
+            if (value !== null && value !== '') {
+                formData.append(key, value as string | Blob);
+            }
+        });
 
         try {
             const response = await fetch('./Backend/ReportFoundItem.php', {
                 method: 'POST',
                 body: formData,
-                credentials: 'include' // Include cookies for session
+                credentials: 'include'
             });
 
             const result = await response.json();
@@ -90,17 +96,7 @@ function ReportFoundItem() {
                     message: "Found item reported successfully!",
                     severity: "success"
                 });
-                // Reset form fields
-                setItemName('');
-                setCategory('');
-                setDateFound('');
-                setLocation('');
-                setDescription('');
-                setFirstName('');
-                setLastName('');
-                setEmail('');
-                setPhone('');
-                setImage(null);
+                resetForm();
             } else {
                 setSnackbar({
                     open: true,
@@ -121,18 +117,15 @@ function ReportFoundItem() {
     // Check authentication status
     useEffect(() => {
         if (!loading && !isAuthenticated) {
-            // User is not authenticated, show snackbar message
             setSnackbar({
                 open: true,
                 message: "You need to be logged in to report a found item",
                 severity: "warning"
             });
-            // Optional: redirect after a delay
             setTimeout(() => navigate('/login'), 2000);
         }
     }, [isAuthenticated, loading, navigate]);
 
-    // If not authenticated, display login message
     if (!loading && !isAuthenticated) {
         return (
             <LayoutDefault>
@@ -164,129 +157,179 @@ function ReportFoundItem() {
                 <Typography variant="h4" gutterBottom>Report Found Item Form</Typography>
 
                 <Paper elevation={3} sx={{ padding: '20px', width: '80%', maxWidth: '600px' }}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Item Name"
-                                variant="outlined"
-                                fullWidth
-                                required
-                                value={itemName}
-                                onChange={(e) => setItemName(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            {/* Replace TextField with Select */}
-                            <FormControl fullWidth required>
-                                <InputLabel id="category-label">Category</InputLabel>
-                                <Select
-                                labelId="category-label"
-                                id="category"
-                                value={category}
-                                label="Category"
-                                onChange={(e) => setCategory(e.target.value)}
-                                >
-                                {categoryOptions.map((option) => (
-                                    <MenuItem key={option} value={option}>
-                                    {option}
-                                    </MenuItem>
-                                ))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Date Found"
-                                type="date"
-                                variant="outlined"
-                                fullWidth
-                                required
-                                InputLabelProps={{
-                                    shrink: true,
-                                }}
-                                value={dateFound}
-                                onChange={(e) => setDateFound(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Location Last Seen"
-                                variant="outlined"
-                                fullWidth
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Description"
-                                multiline
-                                rows={4}
-                                variant="outlined"
-                                fullWidth
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Typography variant="subtitle1">Upload Image:</Typography>
-                            <Input accept="image/*" style={{ display: 'none' }} id="raised-button-file" type="file" onChange={handleImageChange} />
-                            <label htmlFor="raised-button-file">
-                                <IconButton color="primary" aria-label="upload picture" component="span">
-                                    <PhotoCamera />
-                                </IconButton>
-                                {image && <Typography variant="caption">{image.name}</Typography>}
-                            </label>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Typography variant="h6">Contact Information:</Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                            <TextField
-                                label="First Name"
-                                variant="outlined"
-                                fullWidth
-                                required
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={6}>
-                            <TextField
-                                label="Last Name"
-                                variant="outlined"
-                                fullWidth
-                                required
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Email Address"
-                                variant="outlined"
-                                fullWidth
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Phone Number"
-                                variant="outlined"
-                                fullWidth
-                                required
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Button variant="contained" color="primary" onClick={handleSubmit}>
-                                Submit
-                            </Button>
-                        </Grid>
-                    </Grid>
+                    <Formik
+                        initialValues={initialValues}
+                        validationSchema={validationSchema}
+                        onSubmit={handleSubmit}
+                        validateOnMount={true}
+                    >
+                        {({ errors, touched, isSubmitting, isValid, dirty, setFieldValue }) => (
+                            <Form>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="itemName"
+                                            label="Item Name"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.itemName || dirty) && Boolean(errors.itemName)}
+                                            helperText={(touched.itemName || dirty) && errors.itemName}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControl 
+                                            fullWidth 
+                                            required 
+                                            error={(touched.category || dirty) && Boolean(errors.category)}
+                                        >
+                                            <InputLabel id="category-label">Category</InputLabel>
+                                            <Field
+                                                as={Select}
+                                                name="category"
+                                                labelId="category-label"
+                                                label="Category"
+                                            >
+                                                {categoryOptions.map((option) => (
+                                                    <MenuItem key={option} value={option}>
+                                                        {option}
+                                                    </MenuItem>
+                                                ))}
+                                            </Field>
+                                            {(touched.category || dirty) && errors.category && (
+                                                <FormHelperText>{errors.category}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="dateFound"
+                                            label="Date Found"
+                                            type="date"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            InputLabelProps={{
+                                                shrink: true,
+                                            }}
+                                            error={(touched.dateFound || dirty) && Boolean(errors.dateFound)}
+                                            helperText={(touched.dateFound || dirty) && errors.dateFound}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="location"
+                                            label="Location Last Seen"
+                                            variant="outlined"
+                                            fullWidth
+                                            error={(touched.location || dirty) && Boolean(errors.location)}
+                                            helperText={(touched.location || dirty) && errors.location}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="description"
+                                            label="Description"
+                                            multiline
+                                            rows={4}
+                                            variant="outlined"
+                                            fullWidth
+                                            error={(touched.description || dirty) && Boolean(errors.description)}
+                                            helperText={(touched.description || dirty) && errors.description}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="subtitle1">Upload Image:</Typography>
+                                        <input
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            id="raised-button-file"
+                                            type="file"
+                                            onChange={(event) => {
+                                                if (event.currentTarget.files) {
+                                                    setFieldValue("image", event.currentTarget.files[0]);
+                                                }
+                                            }}
+                                        />
+                                        <label htmlFor="raised-button-file">
+                                            <IconButton color="primary" aria-label="upload picture" component="span">
+                                                <PhotoCamera />
+                                            </IconButton>
+                                        </label>
+                                        {(touched.image || dirty) && errors.image && (
+                                            <FormHelperText error>{errors.image}</FormHelperText>
+                                        )}
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="h6">Contact Information:</Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Field
+                                            as={TextField}
+                                            name="firstName"
+                                            label="First Name"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.firstName || dirty) && Boolean(errors.firstName)}
+                                            helperText={(touched.firstName || dirty) && errors.firstName}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Field
+                                            as={TextField}
+                                            name="lastName"
+                                            label="Last Name"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.lastName || dirty) && Boolean(errors.lastName)}
+                                            helperText={(touched.lastName || dirty) && errors.lastName}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="email"
+                                            label="Email Address"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.email || dirty) && Boolean(errors.email)}
+                                            helperText={(touched.email || dirty) && errors.email}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Field
+                                            as={TextField}
+                                            name="phone"
+                                            label="Phone Number"
+                                            variant="outlined"
+                                            fullWidth
+                                            required
+                                            error={(touched.phone || dirty) && Boolean(errors.phone)}
+                                            helperText={(touched.phone || dirty) && errors.phone}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Button 
+                                            variant="contained" 
+                                            color="primary" 
+                                            type="submit"
+                                            disabled={!isValid || isSubmitting}
+                                            fullWidth
+                                        >
+                                            {isSubmitting ? 'Submitting...' : 'Submit'}
+                                        </Button>
+                                    </Grid>
+                                </Grid>
+                            </Form>
+                        )}
+                    </Formik>
                 </Paper>
             </Box>
             <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>

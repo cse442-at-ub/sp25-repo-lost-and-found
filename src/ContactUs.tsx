@@ -3,31 +3,40 @@ import { Button, TextField, Box, Container, Card, CardContent, Typography, Grid2
 import { Email, Phone, Schedule } from "@mui/icons-material";
 import LayoutDefault from "./LayoutDefault";
 import { Link, Navigate, useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
-const ContactUs = (e: any) => {
-  // const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+interface ContactFormData {
+  username: string;
+  name: string;
+  email: string;
+  message: string;
+}
+
+const schema = yup.object().shape({
+  username: yup.string().required("Username is required"),
+  name: yup.string().required("Name is required"),
+  email: yup.string().email("Invalid email format").required("Email is required"),
+  message: yup.string().required("Message is required").min(10, "Message must be at least 10 characters"),
+});
+
+const ContactUs = () => {
   const [resp, setResp] = useState({okay: false, msg: null});
   const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const { register, handleSubmit, formState: { errors } } = useForm<ContactFormData>({
+    resolver: yupResolver(schema),
+  });
 
+  const onSubmit = async (data: ContactFormData) => {
     try {
       const response = await fetch('./Backend/contactUs.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          username: username,
-          name: name,
-          email: email,
-          message: message
-        }),
+        body: JSON.stringify(data),
       });
       const j = await response.json();
       console.log(j);
@@ -62,29 +71,58 @@ const ContactUs = (e: any) => {
         <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", marginRight: "auto", marginLeft: "auto", maxWidth: 600}}>
           <Card>
             <CardContent>
-              <Box component="form" onSubmit={handleSubmit} sx={{m: 1}}>
-                <TextField fullWidth required id="username" label="Username"
-                    name="username" autoComplete="username" autoFocus type="username"
-                    onChange={(e) => { setUsername(e.target.value); }}
-                    sx={{m: 1}}/>
-                <TextField fullWidth required id="name" label="Name"
-                    name="name" autoComplete="name" autoFocus type="name"
-                    onChange={(e) => { setName(e.target.value); }}
-                    sx={{m: 1}}/>
-                <TextField fullWidth required id="email" label="Email Address"
-                    name="email" autoComplete="email" autoFocus type="email"
-                    onChange={(e) => { setEmail(e.target.value); }}
-                    sx={{m: 1}}/>
-                <TextField fullWidth required id="message" label="Message"
-                    name="message" autoComplete="message" autoFocus type="message"
-                    multiline minRows={5}
-                    onChange={(e) => { setMessage(e.target.value); }}
-                    sx={{m: 1}}/>
+              <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{m: 1}}>
+                <TextField 
+                  fullWidth 
+                  required 
+                  id="username" 
+                  label="Username"
+                  {...register("username")}
+                  error={!!errors.username}
+                  helperText={errors.username?.message}
+                  sx={{m: 1}}
+                />
+                <TextField 
+                  fullWidth 
+                  required 
+                  id="name" 
+                  label="Name"
+                  {...register("name")}
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                  sx={{m: 1}}
+                />
+                <TextField 
+                  fullWidth 
+                  required 
+                  id="email" 
+                  label="Email Address"
+                  {...register("email")}
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                  sx={{m: 1}}
+                />
+                <TextField 
+                  fullWidth 
+                  required 
+                  id="message" 
+                  label="Message"
+                  {...register("message")}
+                  error={!!errors.message}
+                  helperText={errors.message?.message}
+                  multiline 
+                  minRows={5}
+                  sx={{m: 1}}
+                />
                 <Typography hidden={resp.msg===null} sx={{color: resp.okay?"#000000":"#cc0000"}}>{resp.msg || ""}</Typography>
-                <Button fullWidth variant="contained" type="submit"
-                    // onClick={() => { navigate("/reset-password"); }}
-                    // disabled={email.length === 0}
-                    sx={{m: 1}}>Send</Button>
+                <Button 
+                  fullWidth 
+                  variant="contained" 
+                  type="submit"
+                  sx={{m: 1}}
+                >
+                  Send
+                </Button>
               </Box>
             </CardContent>
           </Card>

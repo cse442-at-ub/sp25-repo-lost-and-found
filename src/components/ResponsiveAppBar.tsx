@@ -52,6 +52,11 @@ function ResponsiveAppBar() {
     //@ts-ignore
     pageName = pageName.replaceAll(' ', '-');
 
+    if(pageName == "claim-item") {
+      navigate("/claim");
+      return;
+    }
+
     if(pageName === "home") {
       navigate("/");
       return;
@@ -71,12 +76,12 @@ function ResponsiveAppBar() {
     <AppBar position="static">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
+          {/* <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} /> */}
           <Typography
             variant="h6"
             noWrap
             component="a"
-            href="/"
+            onClick={() => {redirectToPage("home")}}
             sx={{
               mr: 2,
               display: { xs: 'none', md: 'flex' },
@@ -137,12 +142,12 @@ function ResponsiveAppBar() {
               }
             </Menu>
           </Box>
-          <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
+          {/* <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} /> */}
           <Typography
             variant="h5"
             noWrap
             component="a"
-            href="/"
+            onClick={() => {redirectToPage("home")}}
             sx={{
               mr: 2,
               display: { xs: 'flex', md: 'none' },
@@ -154,7 +159,7 @@ function ResponsiveAppBar() {
               textDecoration: 'none',
             }}
           >
-            LOGO
+            Lost and Found
           </Typography>
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
             {pages.map((page) => (
