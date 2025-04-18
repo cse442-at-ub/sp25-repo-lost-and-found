@@ -81,88 +81,60 @@ const ViewMessages = () => {
     setLoading(true);
     setError(null);
     
-    // In a real application, you would fetch from your backend
-    // For demo, we'll create mock data
-    setTimeout(() => {
-      const mockData = [];
-      for (let i = 1; i <= 40; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - (i % 15)); // Spread out dates
-        
-        mockData.push({
-          id: i,
-          created_at: date.toISOString(),
-          username: `user${i}`,
-          name: `User ${i}`,
-          email: `user${i}@example.com`,
-          message: `This is test message ${i}. It contains some content that an administrator would need to review and possibly respond to.`,
-          is_read: i % 3 === 0
-        });
-      }
-      
-      setRows(mockData);
+    // Using the actual implementation
+    fetch('./Backend/messages.php', {
+      method: 'GET',
+      credentials: 'include' // Include cookies for authentication
+    })
+    .then((response) => {
+      if (response.ok) return response.json();
+      else navigate('/not-admin');
+    })
+    .then((json) => { 
+      if (json['okay']) setRows(json['rows']); 
       setLoading(false);
-    }, 800);
-    
-    // Uncomment to use actual backend
-    // fetch('http://localhost/Backend/messages.php', {
-    //   method: 'GET',
-    // })
-    // .then((response) => {
-    //   if (response.ok) return response.json();
-    //   else navigate('/not-admin');
-    // })
-    // .then((json) => { 
-    //   if (json['okay']) setRows(json['rows']); 
-    //   setLoading(false);
-    // })
-    // .catch(error => {
-    //   setError("Failed to load messages");
-    //   setLoading(false);
-    // });
+    })
+    .catch(error => {
+      setError("Failed to load messages");
+      setLoading(false);
+    });
   };
 
   const deleteRows = function() {
     setLoading(true);
     
-    // Uncomment to use actual backend
-    // fetch('http://localhost/Backend/messages.php', {
-    //   method: 'DELETE',
-    //   body: JSON.stringify({"selected": selected})
-    // })
-    // .then((response) => {
-    //   if (response.ok) return response.json();
-    //   else navigate('/not-admin');
-    // })
-    // .then((json) => { 
-    //   if (json['okay']) {
-    //     getRows();
-    //     setSuccessMessage(`Successfully deleted ${selected.length} message(s)`);
-    //     setTimeout(() => setSuccessMessage(''), 3000);
-    //   }
-    //   setOpenDeleteDialog(false);
-    //   setSelected([]);
-    // })
-    // .catch(error => {
-    //   setError("Failed to delete messages");
-    //   setLoading(false);
-    //   setOpenDeleteDialog(false);
-    // });
-    
-    // For demo, we'll just filter the rows
-    setTimeout(() => {
-      setRows(rows.filter(row => !selected.includes(row.id)));
-      setSuccessMessage(`Successfully deleted ${selected.length} message(s)`);
-      setSnackbar({
-        open: true,
-        message: `Successfully deleted ${selected.length} message(s)`,
-        severity: "success"
-      });
-      setTimeout(() => setSuccessMessage(''), 3000);
-      setSelected([]);
+    // Using the actual implementation
+    fetch('./Backend/messages.php', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({"selected": selected}),
+      credentials: 'include' // Include cookies for authentication
+    })
+    .then((response) => {
+      if (response.ok) return response.json();
+      else navigate('/not-admin');
+    })
+    .then((json) => { 
+      if (json['okay']) {
+        getRows();
+        setSuccessMessage(`Successfully deleted ${selected.length} message(s)`);
+        setSnackbar({
+          open: true,
+          message: `Successfully deleted ${selected.length} message(s)`,
+          severity: "success"
+        });
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
       setOpenDeleteDialog(false);
+      setSelected([]);
+    })
+    .catch(error => {
+      setError("Failed to delete messages");
       setLoading(false);
-    }, 800);
+      setOpenDeleteDialog(false);
+    });
   };
 
   const handleCloseSnackbar = () => {
@@ -229,15 +201,59 @@ const ViewMessages = () => {
     setPage(0); // Reset to first page on search
   };
 
+  // Function to mark a message as read
+  const markMessageAsRead = async (messageId) => {
+    try {
+      // Using the existing messages.php endpoint with a POST request
+      const response = await fetch('./Backend/messages.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'mark_read',
+          message_id: messageId
+        }),
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.okay) {
+          // Update the UI to reflect the read status
+          setRows(rows.map(row => 
+            row.id === messageId ? { ...row, is_read: 1 } : row
+          ));
+          
+          setSnackbar({
+            open: true,
+            message: "Message marked as read",
+            severity: "success"
+          });
+          
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to mark message as read",
+        severity: "error"
+      });
+      return false;
+    }
+  };
+
   const handleViewMessage = (message) => {
     setSelectedMessage(message);
     setShowDetailView(true);
     
-    // In a real app, you would mark the message as read here
-    // For demo, we'll just update the UI
-    setRows(rows.map(row => 
-      row.id === message.id ? { ...row, is_read: true } : row
-    ));
+    // Mark message as read when viewing it
+    if (message && !message.is_read) {
+      markMessageAsRead(message.id);
+    }
   };
 
   const handleBackToList = () => {
@@ -298,26 +314,30 @@ const ViewMessages = () => {
 
   const isSelected = (id) => selected.indexOf(id) !== -1;
 
-  // Apply filters
-  const filteredRows = rows.filter(row => {
-    // First apply unread filter if active
-    if (filterUnread && row.is_read) {
-      return false;
-    }
-    
-    // Then apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        row.username.toLowerCase().includes(query) ||
-        row.name.toLowerCase().includes(query) ||
-        row.email.toLowerCase().includes(query) ||
-        row.message.toLowerCase().includes(query)
-      );
-    }
-    
-    return true;
-  });
+  // Sort and filter rows
+  const filteredRows = rows
+    // First, sort by created_at in descending order (newest first)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    // Then apply filters
+    .filter(row => {
+      // Apply unread filter if active
+      if (filterUnread && row.is_read) {
+        return false;
+      }
+      
+      // Then apply search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          row.username.toLowerCase().includes(query) ||
+          row.name.toLowerCase().includes(query) ||
+          row.email.toLowerCase().includes(query) ||
+          row.message.toLowerCase().includes(query)
+        );
+      }
+      
+      return true;
+    });
 
   // Apply pagination
   const paginatedRows = filteredRows.slice(
@@ -446,8 +466,10 @@ const ViewMessages = () => {
                 variant="contained"
                 color="primary"
                 startIcon={<VisibilityIcon />}
+                onClick={() => markMessageAsRead(selectedMessage.id)}
+                disabled={selectedMessage.is_read === 1}
               >
-                Mark as Read
+                {selectedMessage.is_read === 1 ? "Already Read" : "Mark as Read"}
               </Button>
               
               <Button
@@ -464,6 +486,37 @@ const ViewMessages = () => {
             </Box>
           </Paper>
         </Container>
+        
+        {/* Delete Confirmation Dialog - include it here so it appears in front of detail view */}
+        <Dialog
+          open={openDeleteDialog}
+          onClose={handleCloseDeleteDialog}
+        >
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete the selected message? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
+            <Button onClick={deleteRows} color="error" variant="contained">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+        
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </LayoutDefault>
     );
   }

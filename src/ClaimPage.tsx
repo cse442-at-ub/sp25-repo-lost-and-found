@@ -252,7 +252,7 @@ function ClaimPage() {
         if (selectedItem) {
             const fetchMessages = async () => {
                 try {
-                    const response = await fetch(`https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/chat.php?item_id=${selectedItem.id}&item_type=found`);
+                    const response = await fetch(`./Backend/chat.php?item_id=${selectedItem.id}&item_type=found`);
                     const data: ChatResponse = await response.json();
                     
                     if (data.success) {
@@ -280,7 +280,7 @@ function ClaimPage() {
         if (!newMessage.trim() || !conversationId || !selectedItem) return;
 
         try {
-            const response = await fetch('https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/chat.php', {
+            const response = await fetch('./Backend/chat.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -295,7 +295,7 @@ function ClaimPage() {
             
             if (data.success) {
                 // Refresh messages after sending
-                const messagesResponse = await fetch(`https://se-prod.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/Backend/chat.php?item_id=${selectedItem.id}&item_type=found`);
+                const messagesResponse = await fetch(`./Backend/chat.php?item_id=${selectedItem.id}&item_type=found`);
                 const messagesData: ChatResponse = await messagesResponse.json();
                 
                 if (messagesData.success) {
