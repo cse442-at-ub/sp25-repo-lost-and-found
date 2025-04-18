@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from "react";
 import LayoutDefault from "./LayoutDefault";
 import {
+  Box,
   Button,
   Card,
   CardContent,
   CardMedia,
-  Grid,
+  Divider,
+  Stack,
   Typography,
+  Tooltip,
+  Fade,
+  Paper,
 } from "@mui/material";
 
-const API_URL =
-  "./Backend/adminClaim.php";
-const APPROVAL_URL =
-  "./Backend/setClaimApproved.php";
-const IMAGE_BASE_URL =
-  "./Backend/";
+const API_URL = "./Backend/adminClaim.php";
+const APPROVAL_URL = "./Backend/setClaimApproved.php";
+const IMAGE_BASE_URL = "./Backend/";
 
 function AdminClaim() {
   const [claims, setClaims] = useState([]);
@@ -23,7 +25,6 @@ function AdminClaim() {
     fetch(API_URL)
       .then((response) => response.json())
       .then((data) => {
-        // Filter claims where 'approved' is NULL
         const pendingClaims = data.filter((claim) => claim.approved === null);
         setClaims(pendingClaims);
       })
@@ -38,10 +39,10 @@ function AdminClaim() {
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log("Response:", data);
         if (data.success) {
-          // Remove the claim from UI after approval/denial
-          setClaims((prevClaims) => prevClaims.filter((claim) => claim.claim_id !== id));
+          setClaims((prevClaims) =>
+            prevClaims.filter((claim) => claim.claim_id !== id)
+          );
         } else {
           alert("Failed to update claim.");
         }
@@ -51,82 +52,108 @@ function AdminClaim() {
 
   return (
     <LayoutDefault>
-      {claims.length == 0 && 
-        <Typography variant="body">There are no claims to be reviewed</Typography>
-      }
-      <Grid container spacing={3} style={{ padding: 20 }}>
-        {claims.map((claim) => (
-          <React.Fragment key={claim.id}>
-            {/* Item Card */}
-            <Grid item xs={12} md={6} alignSelf={"center"}>
-              <Card>
+      {claims.length === 0 ? (
+        <Typography variant="h6" sx={{ p: 6, textAlign: "center", color: "text.secondary" }}>
+          🎉 All caught up! No pending claims to review.
+        </Typography>
+      ) : (
+        <Box sx={{ p: 3, maxWidth: "1000px", mx: "auto" }}>
+          <Typography variant="h4" fontWeight="bold" mb={4} textAlign="center">
+            Pending Claims
+          </Typography>
+
+          {claims.map((claim) => (
+            <Fade in key={claim.claim_id}>
+              <Card
+                elevation={6}
+                sx={{
+                  mb: 5,
+                  p: 2,
+                  borderRadius: 4,
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  gap: 2,
+                  background: "#fafafa",
+                }}
+              >
                 <CardMedia
                   component="img"
+                  sx={{
+                    width: { xs: "100%", sm: 220 },
+                    height: 220,
+                    borderRadius: 3,
+                    objectFit: "cover",
+                    backgroundColor: "#f0f0f0",
+                  }}
                   src={
                     claim.image
                       ? `${IMAGE_BASE_URL}${encodeURI(claim.image)}`
                       : `${IMAGE_BASE_URL}default-item.png`
                   }
                   alt="Item Image"
-                  style={{ width: "100%", height: "auto" }}
                 />
-                <CardContent>
-                  <Typography variant="h6">
-                    {claim.item_name || "Unknown Item"}
-                  </Typography>
-                  <Typography variant="body2">
-                    Found by {claim.first_name} {claim.last_name}
-                  </Typography>
-                  <Typography variant="body2">
-                    {claim.description || `Found at ${claim.location_found || "Unknown location"}`}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
 
-            {/* Claimant Card */}
-            <Grid item xs={12} md={6} alignSelf={"center"}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6">Claim</Typography>
-                  <Typography variant="body2">
-                    Name: {claim.first_name} {claim.last_name}
-                  </Typography>
-                  <Typography variant="body2">
-                    Email: {claim.email || "N/A"}
-                  </Typography>
-                  <Typography variant="body2">
-                    Phone: {claim.phone || "N/A"}
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    style={{
-                      backgroundColor: "green",
-                      color: "white",
-                      marginRight: 10,
-                      marginTop: 10,
-                    }}
-                    onClick={() => handleApproval(claim.claim_id, 1)}
-                  >
-                    APPROVE
-                  </Button>
-                  <Button
-                    variant="contained"
-                    style={{
-                      backgroundColor: "red",
-                      color: "white",
-                      marginTop: 10,
-                    }}
-                    onClick={() => handleApproval(claim.claim_id, 0)}
-                  >
-                    DENY
-                  </Button>
-                </CardContent>
+                <Box sx={{ flex: 1 }}>
+                  <CardContent sx={{ pb: 0 }}>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      {claim.item_name || "Unnamed Item"}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Found by <strong>{claim.first_name} {claim.last_name}</strong>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {claim.description || `Found at ${claim.location_found || "Unknown location"}`}
+                    </Typography>
+                  </CardContent>
+
+                  <Divider sx={{ my: 1 }} />
+
+                  <Box px={2} pb={1}>
+                    <Typography variant="subtitle2" fontWeight="bold" mb={1}>
+                      Claimant Info
+                    </Typography>
+
+                    <Paper variant="outlined" sx={{ p: 2, backgroundColor: "#fff" }}>
+                      <Typography variant="body2"><strong>Name:</strong> {claim.first_name || "N/A"} {claim.last_name || ""}</Typography>
+                      <Typography variant="body2"><strong>Email:</strong> {claim.email || "N/A"}</Typography>
+                      <Typography variant="body2"><strong>Phone:</strong> {claim.phone || "N/A"}</Typography>
+                      <Typography variant="body2"><strong>Ownership Proof:</strong> {claim.proof_of_ownership || "N/A"}</Typography>
+                      <Typography variant="body2"><strong>Additional Details:</strong> {claim.additional_details || "N/A"}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Requested At:</strong> {new Date(claim.created_at).toLocaleString()}
+                      </Typography>
+                    </Paper>
+                  </Box>
+
+                  <Stack direction="row" spacing={2} px={2} pt={2}>
+                    <Tooltip title="Approve claim" arrow>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => handleApproval(claim.claim_id, 1)}
+                        sx={{ minWidth: 120, borderRadius: 2 }}
+                      >
+                        Approve
+                      </Button>
+                    </Tooltip>
+
+                    <Tooltip title="Deny claim" arrow>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => handleApproval(claim.claim_id, 0)}
+                        sx={{ minWidth: 120, borderRadius: 2 }}
+                      >
+                        Deny
+                      </Button>
+                    </Tooltip>
+                  </Stack>
+                </Box>
               </Card>
-            </Grid>
-          </React.Fragment>
-        ))}
-      </Grid>
+            </Fade>
+          ))}
+        </Box>
+      )}
     </LayoutDefault>
   );
 }
