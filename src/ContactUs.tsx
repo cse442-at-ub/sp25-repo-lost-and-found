@@ -25,8 +25,21 @@ const ContactUs = () => {
   const [resp, setResp] = useState({okay: false, msg: null});
   const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ContactFormData>({
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors, isValid, isDirty, touchedFields },
+    trigger
+  } = useForm<ContactFormData>({
     resolver: yupResolver(schema),
+    mode: "onChange",
+    reValidateMode: "onChange",
+    defaultValues: {
+      username: "",
+      name: "",
+      email: "",
+      message: ""
+    }
   });
 
   const onSubmit = async (data: ContactFormData) => {
@@ -45,6 +58,10 @@ const ContactUs = () => {
     } catch (error) {
       console.error('Error during posting message:', error);
     }
+  };
+
+  const handleBlur = async (fieldName: keyof ContactFormData) => {
+    await trigger(fieldName);
   };
 
   return (
@@ -80,6 +97,7 @@ const ContactUs = () => {
                   {...register("username")}
                   error={!!errors.username}
                   helperText={errors.username?.message}
+                  onBlur={() => handleBlur("username")}
                   sx={{m: 1}}
                 />
                 <TextField 
@@ -90,6 +108,7 @@ const ContactUs = () => {
                   {...register("name")}
                   error={!!errors.name}
                   helperText={errors.name?.message}
+                  onBlur={() => handleBlur("name")}
                   sx={{m: 1}}
                 />
                 <TextField 
@@ -100,6 +119,7 @@ const ContactUs = () => {
                   {...register("email")}
                   error={!!errors.email}
                   helperText={errors.email?.message}
+                  onBlur={() => handleBlur("email")}
                   sx={{m: 1}}
                 />
                 <TextField 
@@ -110,6 +130,7 @@ const ContactUs = () => {
                   {...register("message")}
                   error={!!errors.message}
                   helperText={errors.message?.message}
+                  onBlur={() => handleBlur("message")}
                   multiline 
                   minRows={5}
                   sx={{m: 1}}
@@ -119,6 +140,7 @@ const ContactUs = () => {
                   fullWidth 
                   variant="contained" 
                   type="submit"
+                  disabled={!isValid || !isDirty}
                   sx={{m: 1}}
                 >
                   Send
