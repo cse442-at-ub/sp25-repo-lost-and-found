@@ -42,14 +42,40 @@ function HomePage() {
                     }
                 </Box>
                 
-                <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
-                    <Typography variant="h4" gutterBottom>
-                    Lost something? Found something?
-                    </Typography>
-                    <Typography variant="h2" gutterBottom>
-                    Lost and Found Portal
-                    </Typography>
-                </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        textAlign: { xs: 'center', sm: 'left' },
+                        px: 2,
+                        py: 4,
+                    }}
+                    >
+                    <Box
+                        component="img"
+                        src="./logo.png"
+                        alt="Logo"
+                        sx={{
+                        width: "auto",
+                        height: "auto",
+                        marginBottom: { xs: 2, sm: 0 },
+                        marginRight: { sm: 3 },
+                        }}
+                    />
+
+                    <Box>
+                        <Typography variant="h4" gutterBottom>
+                        Lost something? Found something?
+                        </Typography>
+                        <Typography variant="h2" gutterBottom>
+                        Lost and Found Portal
+                        </Typography>
+                    </Box>
+                    </Box>
+
+
 
                 <Grid container justifyContent={'center'} spacing={12}>
                     <Grid item size={4}>
