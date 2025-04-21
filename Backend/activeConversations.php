@@ -3,8 +3,8 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 $allowedOrigins = [
-    'http://localhost:5173',
-    'https://se-dev.cse.buffalo.edu/CSE442/2025-Spring/cse-442s/julia/'
+   // 'http://localhost:5173',
+    'https://cattle.cse.buffalo.edu/CSE442/2025-Spring/cse-442s'
 ];
 
 $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
