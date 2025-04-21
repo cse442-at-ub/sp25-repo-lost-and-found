@@ -34,9 +34,9 @@ function AboutUs() {
                         <Grid item xs={12} md={6}>
                             <Box
                                 component="img"
-                                src="./lost-and-found.png"
+                                src="./logo.png"
                                 alt="Hero Image"
-                                sx={{ maxWidth: "350px", height: "auto" , objectFit: "contain", display: "block",}}
+                                sx={{ maxWidth: "auto", height: "auto" , objectFit: "contain", display: "block",}}
                             />
                         </Grid>
                         

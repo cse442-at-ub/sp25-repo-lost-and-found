@@ -127,8 +127,8 @@ function LoginPage() {
                     <Typography variant="h4" fontWeight="bold" mb={1}>
                         Welcome to
                     </Typography>
-                    <Box component="img" src="/rocket-icon.svg" alt="Logo" sx={{ width: 50, height: 50, mb: 1 }} />
-                    <Typography variant="h5" mb={2}>Lost & Found</Typography>
+                    <Box component="img" src="./logo.png" alt="Logo" sx={{ width: "auto", height: "auto", mb: 1 }} />
+                    <Typography variant="h5" mb={2}>Lost & Found Portal</Typography>
                     <Typography variant="body2" maxWidth={300}>
                         Access your account and hope your items find their home!
                     </Typography>

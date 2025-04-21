@@ -106,10 +106,9 @@ function RegisterPage() {
             borderBottomLeftRadius: '12px',
           }}
         >
-          <RocketIcon sx={{ fontSize: 60 }} />
-          <Typography variant="h4" fontWeight="bold" mt={2}>Lost & Found</Typography>
+          <Box component="img" src="./logo.png" alt="Logo" sx={{ width: "auto", height: "auto", mb: 1 }} />
           <Typography align="center" mt={2} maxWidth="300px">
-            Welcome to Lost & Found! Sign up to get started.
+            Welcome to Lost & Found Portal! Sign up to get started.
           </Typography>
         </Box>
 
