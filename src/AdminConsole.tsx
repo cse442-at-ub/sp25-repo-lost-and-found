@@ -24,7 +24,8 @@ import {
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   ArrowBack as ArrowBackIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  AssignmentReturn as AssignmentReturnIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router';
 import { useAuth } from './components/AuthContext';
@@ -101,6 +102,14 @@ const AdminConsole = () => {
       icon: <CompareIcon fontSize="large" color="secondary" />,
       path: '/admin-match',
       color: '#e8f5e9',
+      count: null
+    },
+    {
+      title: 'Admin Retrieval',
+      description: 'Manage and process item retrieval requests from users',
+      icon: <AssignmentReturnIcon fontSize="large" color="primary" />,
+      path: '/admin-retrieve',
+      color: '#e3f2fd',
       count: null
     },
     {
