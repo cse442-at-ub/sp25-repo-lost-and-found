@@ -26,8 +26,24 @@ interface LostItem {
   created_at: string;
 }
 
+interface FoundItem {
+  id: number;
+  name: string;
+  image: string;
+  location: string;
+  description: string;
+  claim_id: number | null;
+  approved: number | null;
+  rejection_reason: string | null;
+  claim_type: string | null;
+  proof_of_ownership: string | null;
+  additional_details: string | null;
+  created_at: string;
+  match_id: number | null;
+}
+
 function UserDashboard() {
-  const [adminActionItems, setAdminActionItems] = useState<LostItem[]>([]);
+  const [adminActionItems, setAdminActionItems] = useState<FoundItem[]>([]);
   const [losts, setLosts] = useState<LostItem[]>([]);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
   const [userName, setUserName] = useState('User');
@@ -56,33 +72,35 @@ function UserDashboard() {
         const lostRes = await fetch('./Backend/getAllMyLost.php');
         const lostItems = await lostRes.json();
 
-        // Log the raw data for debugging
-        console.log('Raw Lost Items:', lostItems);
+        // Fetch found items for admin actions
+        const foundRes = await fetch('./Backend/getAllMyFound.php');
+        const foundItems = await foundRes.json();
 
         // Tag items with their origin
-        const taggedLostItems = lostItems.map(item => ({
+        const taggedLostItems = lostItems.map((item: LostItem) => ({
           ...item,
           origin: 'user_reported_lost'
         }));
 
-        // Classify items:
-        // - Admin Action: items with any admin action (match_id, claim_id, or approved)
-        // - Lost: items with no admin action
-        setAdminActionItems(taggedLostItems.filter(item => 
+        // Tag found items with their origin
+        const taggedFoundItems = foundItems.map((item: FoundItem) => ({
+          ...item,
+          origin: 'user_reported_found'
+        }));
+
+        // Set admin action items from found items
+        setAdminActionItems(taggedFoundItems.filter((item: FoundItem) => 
           item.match_id != null || 
           item.claim_id != null || 
           item.approved != null
         ));
 
-        setLosts(taggedLostItems.filter(item => 
+        // Set lost items
+        setLosts(taggedLostItems.filter((item: LostItem) => 
           item.match_id == null && 
           item.claim_id == null && 
           item.approved == null
         ));
-
-        // Log the final filtered items
-        console.log('Admin Action Items:', adminActionItems);
-        console.log('Lost Items:', losts);
 
       } catch (error) {
         setErrorMsg("Failed to load data");
@@ -116,14 +134,14 @@ function UserDashboard() {
     }
   };
 
-  const handleEdit = (type, item) => {
+  const handleEdit = (type: 'lost' | 'found', item: LostItem | FoundItem) => {
     navigate(`/edit/${type}/${item.id}`);
   };
 
-  const handleDelete = async (type, id) => {
+  const handleDelete = async (type: 'lost' | 'found', id: number) => {
     try {
       const formData = new FormData();
-      formData.append('id', id);
+      formData.append('id', id.toString());
       formData.append('type', type);
       formData.append('action', 'delete');
 
@@ -148,7 +166,7 @@ function UserDashboard() {
     }
   };
 
-  const renderCard = (item: LostItem, type: 'lost' | 'admin_action') => {
+  const renderCard = (item: LostItem | FoundItem, type: 'lost' | 'admin_action') => {
     const isEditable = type === 'lost';
     const statusColor = item.match_id ? 'success' : 
                        item.approved === 0 ? 'error' : 'info';
