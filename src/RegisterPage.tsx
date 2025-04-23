@@ -196,6 +196,15 @@ function RegisterPage() {
                   helperText={touched.password && errors.password}
                   disabled={isSubmitting}
                 />
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Password must be at least 8 characters long and include:
+                  <ul style={{ marginTop: 4, marginBottom: 4, paddingLeft: 20 }}>
+                    <li>One uppercase letter</li>
+                    <li>One lowercase letter</li>
+                    <li>One number</li>
+                    <li>One special character (!@#$%^&*()-_=)</li>
+                  </ul>
+                </Typography>
                 <Field
                   as={TextField}
                   name="confirmPassword"
