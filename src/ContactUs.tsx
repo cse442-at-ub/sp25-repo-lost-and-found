@@ -18,7 +18,7 @@ import {
   GlobalStyles,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Email, Phone, Schedule } from "@mui/icons-material";
+import { Email, Phone, Schedule, Send } from "@mui/icons-material";
 import LayoutDefault from "./LayoutDefault";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -44,11 +44,9 @@ const StyledContainer = styled(Container)(({ theme }) => ({
   width: "100%",
   display: "flex",
   flexDirection: "column",
-  backgroundImage: "url('./Backend/uploads/blue-abstract-background-vector.jpg')",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  backgroundRepeat: "no-repeat",
-  backgroundAttachment: "fixed",
+  justifyContent: "center", // Center vertically
+  alignItems: "center", // Center horizontally
+  backgroundColor: "white",
   position: "relative",
   overflow: "hidden",
   margin: 0,
@@ -102,6 +100,9 @@ const globalStyles = (
 const ContactUs = () => {
   const [resp, setResp] = useState<{ okay: boolean; msg: string | null }>({ okay: false, msg: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [chatMessages, setChatMessages] = useState<string[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isAdminAvailable, setIsAdminAvailable] = useState<boolean | null>(null);
   const navigate = useNavigate();
 
   const {
@@ -154,6 +155,34 @@ const ContactUs = () => {
     await trigger(fieldName);
   };
 
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (chatInput.trim()) {
+      setChatMessages([...chatMessages, chatInput]);
+      setChatInput("");
+    }
+  };
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const response = await fetch("./Backend/checkAdminStatus.php", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await response.json();
+        setIsAdminAvailable(data.isAdminLoggedIn);
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        setIsAdminAvailable(false); // Default to unavailable on error
+      }
+    };
+
+    checkAdminStatus();
+  }, []);
+
   useEffect(() => {
     if (resp.msg) {
       const timer = setTimeout(() => setResp({ okay: false, msg: null }), 5000);
@@ -167,24 +196,23 @@ const ContactUs = () => {
       <StyledContainer disableGutters>
         <Box sx={{ 
           backgroundColor: "rgba(255, 255, 255, 0.95)", 
-          py: 8, 
+          py: 4,
           textAlign: "center", 
           width: "100%",
-          margin: 0,
-          paddingLeft: 0,
-          paddingRight: 0,
+          maxWidth: 1200, // Constrain width for centering
+          mx: "auto",
         }}>
-          <Container maxWidth="xl" sx={{ margin: 0, padding: { xs: 2, sm: 3, md: 4 } }}>
+          <Container maxWidth="xl" sx={{ margin: 0, padding: { xs: 1, sm: 2, md: 3 } }}>
             <Typography
               variant="h2"
-              sx={{ fontWeight: "bold", mb: 2, color: "primary.main" }}
+              sx={{ fontWeight: "bold", mb: 1, color: "primary.main" }}
               className="fade-in"
             >
               Let's Connect
             </Typography>
             <Typography
               variant="h6"
-              sx={{ mb: 4, fontWeight: "medium", color: "primary.main", opacity: 0.9 }}
+              sx={{ mb: 2, fontWeight: "medium", color: "primary.main", opacity: 0.9 }}
               className="fade-in-delay-1"
             >
               Have a question or idea? Reach out to us today!
@@ -194,18 +222,20 @@ const ContactUs = () => {
         <Container 
           maxWidth="xl" 
           sx={{ 
-            py: 8,
+            py: 4,
             margin: 0,
-            paddingLeft: { xs: 2, sm: 3, md: 4 },
-            paddingRight: { xs: 2, sm: 3, md: 4 },
+            paddingLeft: { xs: 1, sm: 2, md: 3 },
+            paddingRight: { xs: 1, sm: 2, md: 3 },
             width: "100%",
+            maxWidth: 1200, // Constrain width for centering
+            mx: "auto",
           }}
         >
           <Grid
             container
             direction={{ xs: "column-reverse", md: "row-reverse" }}
-            spacing={{ xs: 3, md: 4 }}
-            sx={{ maxWidth: 1400, mx: "auto" }}
+            spacing={{ xs: 2, md: 3 }}
+            sx={{ maxWidth: 1200, mx: "auto" }}
           >
             <Grid size={{ xs: 12, md: 5 }}>
               <Card
@@ -214,14 +244,14 @@ const ContactUs = () => {
                   boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
                   borderRadius: 3,
                   position: { md: "sticky" },
-                  top: 20,
+                  top: 10,
                 }}
                 className="fade-in-delay-2"
               >
-                <CardContent sx={{ p: 4 }}>
+                <CardContent sx={{ p: 3 }}>
                   <Typography
                     variant="h5"
-                    sx={{ mb: 3, fontWeight: "bold", color: "primary.main" }}
+                    sx={{ mb: 2, fontWeight: "bold", color: "primary.main" }}
                   >
                     Contact Info
                   </Typography>
@@ -298,6 +328,90 @@ const ContactUs = () => {
                   </List>
                 </CardContent>
               </Card>
+              <Card
+                sx={{
+                  background: "rgba(255, 255, 255, 0.95)",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+                  borderRadius: 3,
+                  mt: 2,
+                }}
+                className="fade-in-delay-2"
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{ mb: 2, fontWeight: "bold", color: "primary.main" }}
+                  >
+                    Chat with Us
+                  </Typography>
+                  {isAdminAvailable === null ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Checking admin availability...
+                    </Typography>
+                  ) : isAdminAvailable ? (
+                    <>
+                      <Box
+                        sx={{
+                          height: 150,
+                          overflowY: "auto",
+                          border: "1px solid #e0e0e0",
+                          borderRadius: 2,
+                          p: 2,
+                          mb: 2,
+                          backgroundColor: "#f9f9f9",
+                        }}
+                      >
+                        {chatMessages.length === 0 ? (
+                          <Typography variant="body2" color="text.secondary">
+                            Start the conversation...
+                          </Typography>
+                        ) : (
+                          chatMessages.map((msg, index) => (
+                            <Typography key={index} variant="body2" sx={{ mb: 1 }}>
+                              {msg}
+                            </Typography>
+                          ))
+                        )}
+                      </Box>
+                      <Box
+                        component="form"
+                        onSubmit={handleChatSubmit}
+                        sx={{ display: "flex", gap: 1 }}
+                      >
+                        <TextField
+                          fullWidth
+                          placeholder="Type your message..."
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          InputProps={{ "aria-label": "Chat message" }}
+                          sx={{
+                            "& .MuiInputBase-root": { borderRadius: 2, backgroundColor: "#fff" },
+                            "& .Mui-focused": { boxShadow: "0 0 0 3px rgba(25,118,210,0.2)" },
+                          }}
+                        />
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          sx={{
+                            borderRadius: 2,
+                            background: "linear-gradient(135deg, #1976d2 0%, #115293 100%)",
+                            "&:hover": {
+                              background: "linear-gradient(135deg, #115293 0%, #0d3c6e 100%)",
+                            },
+                            transition: "background 0.2s",
+                          }}
+                        >
+                          <Send />
+                        </Button>
+                      </Box>
+                    </>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Admin is not available. You can send us a message.
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
             </Grid>
             <Grid size={{ xs: 12, md: 7 }}>
               <Card
@@ -305,19 +419,19 @@ const ContactUs = () => {
                   background: "rgba(255, 255, 255, 0.95)",
                   boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
                   borderRadius: 3,
-                  maxWidth: { xs: "100%", sm: 800 },
+                  maxWidth: { xs: "100%", sm: 600 },
                   mx: "auto",
                 }}
                 className="fade-in-delay-1"
               >
-                <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
+                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                   <Typography
                     variant="h5"
-                    sx={{ mb: 4, fontWeight: "bold", color: "primary.main" }}
+                    sx={{ mb: 2, fontWeight: "bold", color: "primary.main" }}
                   >
                     Send Us a Message
                   </Typography>
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{ mb: 2 }}>
                     <Typography variant="caption" sx={{ color: "primary.main" }}>
                       Progress: {validFields}/4 fields completed
                     </Typography>
@@ -340,7 +454,7 @@ const ContactUs = () => {
                       />
                     </Box>
                   </Box>
-                  <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <TextField
                       fullWidth
                       required
