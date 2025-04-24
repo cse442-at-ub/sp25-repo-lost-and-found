@@ -4,6 +4,7 @@ import { Box, Button, TextField, Typography, useMediaQuery, Alert } from "@mui/m
 import RocketIcon from '@mui/icons-material/Rocket';
 import { Formik, Form, Field, FormikErrors } from 'formik';
 import * as yup from 'yup';
+import { useNavigate } from 'react-router-dom';
 
 // Validation schema
 const registerSchema = yup.object().shape({
@@ -56,6 +57,7 @@ type FormValues = typeof initialValues & {
 
 function RegisterPage() {
   const isMobile = useMediaQuery('(max-width:600px)');
+  const navigate = useNavigate();
 
   const handleSubmit = async (values: FormValues, { setSubmitting, setErrors }: any) => {
     try {
@@ -72,8 +74,14 @@ function RegisterPage() {
       });
 
       const data = await response.json();
-      if (!data.success) {
+      if (data.status !== "success") {
         setErrors({ server: data.message || "Registration failed." });
+      } else {
+        // Show success message and redirect after 2 seconds
+        setErrors({ server: `success:${data.message}` });
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       }
     } catch (error) {
       setErrors({ server: "Server error. Please try again." });
@@ -219,8 +227,11 @@ function RegisterPage() {
                 />
 
                 {errors.server && (
-                  <Alert severity="error" sx={{ mb: 2 }}>
-                    {errors.server}
+                  <Alert 
+                    severity={errors.server.startsWith('success:') ? 'success' : 'error'} 
+                    sx={{ mb: 2 }}
+                  >
+                    {errors.server.replace('success:', '')}
                   </Alert>
                 )}
 
