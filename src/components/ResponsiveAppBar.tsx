@@ -16,6 +16,8 @@ import { useNavigate } from 'react-router';
 import { useCookies } from 'react-cookie';
 import NotificationIcon from './NotificationIcon';
 import { useAuth } from './AuthContext';
+import logo from './logo.png';
+
 
 const pages = ['Home', 'Report Lost Item', 'Report Found Item', 'Claim Item', 'My Items', 'About Us', 'Settings', 'Contact Us'];
 
@@ -186,7 +188,7 @@ function ResponsiveAppBar() {
           <Box sx={{ flexGrow: 0 }}>
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
+                <Avatar alt="Lost and Found Logo" src={logo} sx={{ width: 40, height: 40 }} />
               </IconButton>
             </Tooltip>
             <Menu
