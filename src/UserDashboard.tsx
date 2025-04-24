@@ -10,10 +10,42 @@ import { Cancel, CheckCircle, Delete, Edit, Pending } from "@mui/icons-material"
 import { useNavigate } from "react-router";
 import { useAuth } from "./components/AuthContext";
 
+interface LostItem {
+  id: number;
+  name: string;
+  image: string;
+  location: string;
+  description: string;
+  match_id: number | null;
+  claim_id: number | null;
+  approved: number | null;
+  rejection_reason: string | null;
+  claim_type: string | null;
+  proof_of_ownership: string | null;
+  additional_details: string | null;
+  created_at: string;
+}
+
+interface FoundItem {
+  id: number;
+  name: string;
+  image: string;
+  location: string;
+  description: string;
+  claim_id: number | null;
+  approved: number | null;
+  rejection_reason: string | null;
+  claim_type: string | null;
+  proof_of_ownership: string | null;
+  additional_details: string | null;
+  created_at: string;
+  match_id: number | null;
+}
+
 function UserDashboard() {
-  const [adminActionItems, setAdminActionItems] = useState([]);
-  const [losts, setLosts] = useState([]);
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
+  const [adminActionItems, setAdminActionItems] = useState<FoundItem[]>([]);
+  const [losts, setLosts] = useState<LostItem[]>([]);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
   const [userName, setUserName] = useState('User');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,33 +72,35 @@ function UserDashboard() {
         const lostRes = await fetch('./Backend/getAllMyLost.php');
         const lostItems = await lostRes.json();
 
-        // Log the raw data for debugging
-        console.log('Raw Lost Items:', lostItems);
+        // Fetch found items for admin actions
+        const foundRes = await fetch('./Backend/getAllMyFound.php');
+        const foundItems = await foundRes.json();
 
         // Tag items with their origin
-        const taggedLostItems = lostItems.map(item => ({
+        const taggedLostItems = lostItems.map((item: LostItem) => ({
           ...item,
           origin: 'user_reported_lost'
         }));
 
-        // Classify items:
-        // - Admin Action: items with any admin action (match_id, claim_id, or approved)
-        // - Lost: items with no admin action
-        setAdminActionItems(taggedLostItems.filter(item => 
+        // Tag found items with their origin
+        const taggedFoundItems = foundItems.map((item: FoundItem) => ({
+          ...item,
+          origin: 'user_reported_found'
+        }));
+
+        // Set admin action items from found items
+        setAdminActionItems(taggedFoundItems.filter((item: FoundItem) => 
           item.match_id != null || 
           item.claim_id != null || 
           item.approved != null
         ));
 
-        setLosts(taggedLostItems.filter(item => 
+        // Set lost items
+        setLosts(taggedLostItems.filter((item: LostItem) => 
           item.match_id == null && 
           item.claim_id == null && 
           item.approved == null
         ));
-
-        // Log the final filtered items
-        console.log('Admin Action Items:', adminActionItems);
-        console.log('Lost Items:', losts);
 
       } catch (error) {
         setErrorMsg("Failed to load data");
@@ -100,14 +134,14 @@ function UserDashboard() {
     }
   };
 
-  const handleEdit = (type, item) => {
+  const handleEdit = (type: 'lost' | 'found', item: LostItem | FoundItem) => {
     navigate(`/edit/${type}/${item.id}`);
   };
 
-  const handleDelete = async (type, id) => {
+  const handleDelete = async (type: 'lost' | 'found', id: number) => {
     try {
       const formData = new FormData();
-      formData.append('id', id);
+      formData.append('id', id.toString());
       formData.append('type', type);
       formData.append('action', 'delete');
 
@@ -132,10 +166,10 @@ function UserDashboard() {
     }
   };
 
-  const renderCard = (item, type) => {
+  const renderCard = (item: LostItem | FoundItem, type: 'lost' | 'admin_action') => {
     const isEditable = type === 'lost';
     const statusColor = item.match_id ? 'success' : 
-                       item.approved === false ? 'error' : 'info';
+                       item.approved === 0 ? 'error' : 'info';
 
     return (
       <Card key={`${type}-${item.id}`} sx={{ 
@@ -190,46 +224,91 @@ function UserDashboard() {
           <Divider sx={{ my: 1, borderColor: 'divider' }} />
 
           <List dense sx={{ py: 0 }}>
-            <ListItem sx={{ px: 0 }}>
-              <ListItemIcon sx={{ minWidth: 36 }}>
-                {item.match_id ? 
-                  <CheckCircle color="success" /> : 
-                  <Pending color={statusColor} />}
-              </ListItemIcon>
-              <ListItemText 
-                primary={item.match_id ? "Matched" : "Pending match"} 
-                primaryTypographyProps={{ variant: 'body2' }}
-              />
-            </ListItem>
-            <ListItem sx={{ px: 0 }}>
-              <ListItemIcon sx={{ minWidth: 36 }}>
-                {item.claim_id ? 
-                  <CheckCircle color="success" /> : 
-                  <Pending color={statusColor} />}
-              </ListItemIcon>
-              <ListItemText 
-                primary={item.claim_id ? "Claimed" : "Not claimed"} 
-                primaryTypographyProps={{ variant: 'body2' }}
-              />
-            </ListItem>
             {type === 'admin_action' && (
-              <ListItem sx={{ px: 0 }}>
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  {item.approved === true ? 
-                    <CheckCircle color="success" /> : 
-                    item.approved === false ? 
-                    <Cancel color="error" /> : 
-                    <Pending color="info" />}
-                </ListItemIcon>
-                <ListItemText 
-                  primary={
-                    item.approved === true ? "Approved" : 
-                    item.approved === false ? "Rejected" : 
-                    "Pending approval"
-                  } 
-                  primaryTypographyProps={{ variant: 'body2' }}
-                />
-              </ListItem>
+              <>
+                <ListItem sx={{ px: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    {item.claim_id ? 
+                      <CheckCircle color="success" /> : 
+                      <Pending color={statusColor} />}
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={item.claim_id ? "Claimed" : "Not claimed"} 
+                    primaryTypographyProps={{ variant: 'body2' }}
+                  />
+                </ListItem>
+                <ListItem sx={{ px: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    {item.approved === 1 ? 
+                      <CheckCircle color="success" /> : 
+                      item.approved === 0 ? 
+                      <Cancel color="error" /> : 
+                      <Pending color="info" />}
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={
+                      item.approved === 1 ? "Approved" : 
+                      item.approved === 0 ? "Rejected" : 
+                      "Pending approval"
+                    } 
+                    primaryTypographyProps={{ variant: 'body2' }}
+                  />
+                </ListItem>
+                {item.rejection_reason && (
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText 
+                      primary={`Rejection Reason: ${item.rejection_reason}`}
+                      primaryTypographyProps={{ 
+                        variant: 'body2',
+                        color: 'error.main',
+                        sx: { fontStyle: 'italic' }
+                      }}
+                    />
+                  </ListItem>
+                )}
+                {item.proof_of_ownership && (
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText 
+                      primary={`Proof of Ownership: ${item.proof_of_ownership}`}
+                      primaryTypographyProps={{ variant: 'body2' }}
+                    />
+                  </ListItem>
+                )}
+                {item.additional_details && (
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText 
+                      primary={`Additional Details: ${item.additional_details}`}
+                      primaryTypographyProps={{ variant: 'body2' }}
+                    />
+                  </ListItem>
+                )}
+              </>
+            )}
+            {type === 'lost' && (
+              <>
+                <ListItem sx={{ px: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    {item.match_id ? 
+                      <CheckCircle color="success" /> : 
+                      <Pending color={statusColor} />}
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={item.match_id ? "Matched" : "Pending match"} 
+                    primaryTypographyProps={{ variant: 'body2' }}
+                  />
+                </ListItem>
+                <ListItem sx={{ px: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    {item.claim_id ? 
+                      <CheckCircle color="success" /> : 
+                      <Pending color={statusColor} />}
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={item.claim_id ? "Claimed" : "Not claimed"} 
+                    primaryTypographyProps={{ variant: 'body2' }}
+                  />
+                </ListItem>
+              </>
             )}
           </List>
         </CardContent>

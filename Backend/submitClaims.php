@@ -12,38 +12,14 @@ error_reporting(0);
 ini_set('log_errors', '1');
 error_log("Starting claim submission process");
 
-// Database connection
-$host = 'db';
-$dbname = 'cse442_2025_spring_team_s_db';
-$username = 'jxboulwa'; // Replace with appropriate credentials
-$password = '50456062'; // Replace with appropriate credentials
+// Include database connection
+require_once 'db.php';
 
-try {
-    // Establish database connection with error handling
-    $conn = new mysqli($host, $username, $password, $dbname);
-
-    if ($conn->connect_error) {
-        error_log("Database connection failed: " . $conn->connect_error);
-        echo json_encode([
-            "success" => false, 
-            "message" => "Database connection failed. Please try again later."
-        ]);
-        exit;
-    }
-
-    // Check if user is logged in
-    if (!isset($_SESSION['user_id'])) {
-        echo json_encode([
-            "success" => false, 
-            "message" => "User not logged in"
-        ]);
-        exit;
-    }
-} catch (Exception $e) {
-    error_log("Error connecting to database: " . $e->getMessage());
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
     echo json_encode([
         "success" => false, 
-        "message" => "Database connection failed. Please try again later."
+        "message" => "User not logged in"
     ]);
     exit;
 }
@@ -89,13 +65,13 @@ $proofOfOwnership = $input['proof_of_ownership'];
 $additionalDetails = $input['additional_details'] ?? '';
 
 try {
-    // Check if the user has already submitted a claim for this item
-    $checkStmt = $conn->prepare("SELECT id FROM claims WHERE user_id = ? AND item_id = ? AND claim_type = ? AND approved IS NULL");
-    $checkStmt->bind_param("iis", $userId, $itemId, $claimType);
-    $checkStmt->execute();
-    $existingResult = $checkStmt->get_result();
+    $pdo = getDbConnection();
     
-    if ($existingResult->num_rows > 0) {
+    // Check if the user has already submitted a claim for this item
+    $checkStmt = $pdo->prepare("SELECT id FROM claims WHERE user_id = ? AND item_id = ? AND claim_type = ? AND approved IS NULL");
+    $checkStmt->execute([$userId, $itemId, $claimType]);
+    
+    if ($checkStmt->rowCount() > 0) {
         echo json_encode([
             "success" => false,
             "message" => "You have already claimed this item"
@@ -104,12 +80,10 @@ try {
     }
     
     // Check if the item exists
-    $itemStmt = $conn->prepare("SELECT id, item_name FROM found_items WHERE id = ?");
-    $itemStmt->bind_param("i", $itemId);
-    $itemStmt->execute();
-    $itemResult = $itemStmt->get_result();
+    $itemStmt = $pdo->prepare("SELECT id, item_name FROM found_items WHERE id = ?");
+    $itemStmt->execute([$itemId]);
     
-    if ($itemResult->num_rows === 0) {
+    if ($itemStmt->rowCount() === 0) {
         echo json_encode([
             "success" => false,
             "message" => "Item not found"
@@ -117,21 +91,17 @@ try {
         exit;
     }
     
-    $itemData = $itemResult->fetch_assoc();
+    $itemData = $itemStmt->fetch(PDO::FETCH_ASSOC);
     $itemName = $itemData['item_name'];
     
     // Start transaction
-    $conn->begin_transaction();
+    $pdo->beginTransaction();
     
     // Insert the claim
-    $stmt = $conn->prepare("INSERT INTO claims (user_id, item_id, claim_type, proof_of_ownership, additional_details) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("iisss", $userId, $itemId, $claimType, $proofOfOwnership, $additionalDetails);
+    $stmt = $pdo->prepare("INSERT INTO claims (user_id, item_id, claim_type, proof_of_ownership, additional_details) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$userId, $itemId, $claimType, $proofOfOwnership, $additionalDetails]);
     
-    if (!$stmt->execute()) {
-        throw new Exception("Failed to submit claim: " . $stmt->error);
-    }
-    
-    $claimId = $stmt->insert_id;
+    $claimId = $pdo->lastInsertId();
     
     // Create notification for the user
     $notificationTitle = "Claim Submitted";
@@ -159,8 +129,8 @@ try {
             $notifyAdminMessage = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
             $notifyAdminDetails = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
             
-            $result = $conn->query('SELECT user_id FROM users WHERE is_admin=1');
-            while ($row = $result->fetch_assoc()) {
+            $adminStmt = $pdo->query('SELECT user_id FROM users WHERE is_admin=1');
+            while ($row = $adminStmt->fetch(PDO::FETCH_ASSOC)) {
                 $adminId = $row['user_id'];
                 createNotification(
                     $adminId,
@@ -181,21 +151,19 @@ try {
         // Try to directly insert notification if the function isn't available
         try {
             // Insert notification for the claimant
-            $notifStmt = $conn->prepare("INSERT INTO notification_system (user_id, title, message, details, type) VALUES (?, ?, ?, ?, ?)");
+            $notifStmt = $pdo->prepare("INSERT INTO notification_system (user_id, title, message, details, type) VALUES (?, ?, ?, ?, ?)");
             $type = 'info';
-            $notifStmt->bind_param("issss", $userId, $notificationTitle, $notificationMessage, $notificationDetails, $type);
-            $notifStmt->execute();
+            $notifStmt->execute([$userId, $notificationTitle, $notificationMessage, $notificationDetails, $type]);
             
             // Notify admins
             $notifyAdminTitle = "New claim for $itemName";
             $notifyAdminMessage = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
             $notifyAdminDetails = "A claim (ID: $claimId) from user ($userId) has been received. Please review it.";
             
-            $result = $conn->query('SELECT user_id FROM users WHERE is_admin=1');
-            while ($row = $result->fetch_assoc()) {
+            $adminStmt = $pdo->query('SELECT user_id FROM users WHERE is_admin=1');
+            while ($row = $adminStmt->fetch(PDO::FETCH_ASSOC)) {
                 $adminId = $row['user_id'];
-                $notifStmt->bind_param("issss", $adminId, $notifyAdminTitle, $notifyAdminMessage, $notifyAdminDetails, $type);
-                $notifStmt->execute();
+                $notifStmt->execute([$adminId, $notifyAdminTitle, $notifyAdminMessage, $notifyAdminDetails, $type]);
             }
         } catch (Exception $directNotifError) {
             error_log("Error creating direct notification: " . $directNotifError->getMessage());
@@ -203,7 +171,7 @@ try {
     }
     
     // Commit transaction
-    $conn->commit();
+    $pdo->commit();
     
     echo json_encode([
         "success" => true,
@@ -211,10 +179,10 @@ try {
         "claim_id" => $claimId
     ]);
     
-} catch (Exception $e) {
+} catch (PDOException $e) {
     // Rollback on error
-    if ($conn && !$conn->connect_error) {
-        $conn->rollback();
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
     }
     
     error_log("Error in claim submission: " . $e->getMessage());
@@ -224,14 +192,18 @@ try {
         "success" => false,
         "message" => "Error submitting claim. Please try again later."
     ]);
-} finally {
-    // Close all statement and connection resources
-    if (isset($stmt) && $stmt) $stmt->close();
-    if (isset($checkStmt) && $checkStmt) $checkStmt->close();
-    if (isset($itemStmt) && $itemStmt) $itemStmt->close();
-    if (isset($notifStmt) && $notifStmt) $notifStmt->close();
-    if (isset($conn) && $conn) $conn->close();
+} catch (Exception $e) {
+    // Rollback on error
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     
-    error_log("Claim submission process completed");
+    error_log("Error in claim submission: " . $e->getMessage());
+    error_log("Error trace: " . $e->getTraceAsString());
+    
+    echo json_encode([
+        "success" => false,
+        "message" => "Error submitting claim. Please try again later."
+    ]);
 }
 ?>

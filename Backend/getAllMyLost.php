@@ -6,66 +6,65 @@ require_once 'session.php';
 $user_id = validateSessionAndFindUser(false);
 $pdo = getDbConnection();
 
-// First query: Lost items with matches
-$stmt1 = $pdo->prepare("
-  SELECT
-    lost_items.id AS id,
-    lost_items.name AS name,
-    lost_items.file_path AS image,
-    lost_items.last_seen_location AS location,
-    lost_items.description AS description,
-    matches.match_id AS match_id,
-    claims.id AS claim_id,
-    claims.approved AS approved,
-    claims.rejection_reason AS rejection_reason
-  FROM lost_items
-  LEFT JOIN matches ON lost_items.id = matches.lost_item_id
-  LEFT JOIN found_items ON matches.found_item_id = found_items.id
-  LEFT JOIN claims ON found_items.id = claims.item_id
-  WHERE lost_items.user_id = ?
-");
-$stmt1->execute([$user_id]);
-$lostItemsWithMatches = $stmt1->fetchAll(PDO::FETCH_ASSOC);
+// Check if user is admin
+$stmt = $pdo->prepare("SELECT is_admin FROM users WHERE user_id = ?");
+$stmt->execute([$user_id]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Second query: Lost items potentially linked to found items with claims
-$stmt2 = $pdo->prepare("
-  SELECT
-    lost_items.id AS id,
-    lost_items.name AS name,
-    lost_items.file_path AS image,
-    lost_items.last_seen_location AS location,
-    lost_items.description AS description,
-    NULL AS match_id,
-    claims.id AS claim_id,
-    claims.approved AS approved,
-    claims.rejection_reason AS rejection_reason
-  FROM lost_items
-  CROSS JOIN found_items
-  INNER JOIN claims ON found_items.id = claims.item_id
-  WHERE lost_items.user_id = ?
-    AND (lost_items.name = found_items.item_name OR lost_items.last_seen_location = found_items.location_found)
-    AND NOT EXISTS (
-      SELECT 1
-      FROM matches
-      WHERE matches.lost_item_id = lost_items.id
-    )
-");
-$stmt2->execute([$user_id]);
-$lostItemsWithClaims = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+if ($user['is_admin']) {
+    // Admin view - get all lost items
+    $stmt = $pdo->prepare("
+        SELECT 
+            li.id,
+            li.name,
+            li.file_path AS image,
+            li.last_seen_location AS location,
+            li.description,
+            m.match_id,
+            c.id AS claim_id,
+            c.approved,
+            c.rejection_reason,
+            c.claim_type,
+            c.proof_of_ownership,
+            c.additional_details,
+            c.created_at
+        FROM lost_items li
+        LEFT JOIN matches m ON li.id = m.lost_item_id
+        LEFT JOIN found_items fi ON m.found_item_id = fi.id
+        LEFT JOIN claims c ON fi.id = c.item_id
+        ORDER BY li.id DESC
+    ");
+    $stmt->execute();
+    $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo json_encode($items);
+} else {
+    // Regular user view - get their lost items with matches and claims
+    $stmt = $pdo->prepare("
+        SELECT 
+            li.id,
+            li.name,
+            li.file_path AS image,
+            li.last_seen_location AS location,
+            li.description,
+            m.match_id,
+            c.id AS claim_id,
+            c.approved,
+            c.rejection_reason,
+            c.claim_type,
+            c.proof_of_ownership,
+            c.additional_details,
+            c.created_at
+        FROM lost_items li
+        LEFT JOIN matches m ON li.id = m.lost_item_id
+        LEFT JOIN found_items fi ON m.found_item_id = fi.id
+        LEFT JOIN claims c ON fi.id = c.item_id
+        WHERE li.user_id = ?
+        ORDER BY li.id DESC
+    ");
+    $stmt->execute([$user_id]);
+    $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Combine the results and deduplicate by id
-$allItems = array_merge($lostItemsWithMatches, $lostItemsWithClaims);
-$uniqueItems = [];
-$seenIds = [];
-foreach ($allItems as $item) {
-  if (!in_array($item['id'], $seenIds)) {
-    $uniqueItems[] = $item;
-    $seenIds[] = $item['id'];
-  }
+    echo json_encode($items);
 }
-
-// Log the results for debugging
-error_log('Lost Items: ' . print_r($uniqueItems, true));
-
-echo json_encode($uniqueItems);
 ?>
