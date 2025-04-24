@@ -18,9 +18,15 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Alert,
+  Snackbar,
+  CircularProgress,
+  Box
 } from '@mui/material';
 import { Search, CheckCircle, Pending, Cancel } from '@mui/icons-material';
 import LayoutDefault from './LayoutDefault';
+import { useNavigate } from 'react-router';
+import { useAuth } from './components/AuthContext';
 
 interface Item {
   id: number;
@@ -28,38 +34,60 @@ interface Item {
   type: 'Lost' | 'Found';
   reportedBy: string;
   date: string;
-  image: string; // This should be the relative path from the database
+  image: string;
   description: string;
   location: string;
-  status: 'Matched' | 'Pending Confirmation' | 'No Match'; // Added status field
+  status: 'Matched' | 'Pending Confirmation' | 'No Match';
 }
 
 const AdminMatch = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, isAdmin, loading: authLoading } = useAuth();
+  
   const [items, setItems] = useState<Item[]>([]);
   const [search, setSearch] = useState('');
   const [selectedLost, setSelectedLost] = useState<number | null>(null);
   const [selectedFound, setSelectedFound] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null); // State for selected image
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [successful, setSuccessful] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [openImageDialog, setOpenImageDialog] = useState(false);
   const [openMatchDialog, setOpenMatchDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info' as 'error' | 'warning' | 'info' | 'success'
+  });
 
-
+  // Check if user is authenticated and is admin
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await fetch('./Backend/getItems.php'); // Fetch items from the backend
-        const data = await response.json();
-        setItems(data);
-      } catch (error) {
-        console.error("Error fetching items:", error);
-      }
-    };
+    if (!authLoading && (!isAuthenticated || !isAdmin)) {
+      setSnackbar({
+        open: true,
+        message: 'Admin access required. Redirecting...',
+        severity: 'error'
+      });
+      setTimeout(() => navigate('/not-admin'), 2000);
+    } else if (!authLoading && isAuthenticated && isAdmin) {
+      fetchItems();
+    }
+  }, [isAuthenticated, isAdmin, authLoading, navigate]);
 
-    fetchItems();
-  }, []);
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('./Backend/getItems.php');
+      const data = await response.json();
+      setItems(data);
+    } catch (error) {
+      console.error("Error fetching items:", error);
+      setErrorMessage("Failed to load items. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value.toLowerCase());
@@ -99,7 +127,7 @@ const AdminMatch = () => {
           // Update the status of matched items
           setItems(prevItems => prevItems.map(item => {
             if (item.id === selectedLost || item.id === selectedFound) {
-              return { ...item, status: 'Matched' }; // Update status to Matched
+              return { ...item, status: 'Matched' };
             }
             return item;
           }));
@@ -119,8 +147,9 @@ const AdminMatch = () => {
 
   const handleImageDialogClose = () => {
     setOpenImageDialog(false);
-    setSelectedImage(null); // Reset selected image when closing dialog
+    setSelectedImage(null);
   };
+  
   const handleMatchDialogClose = () => {
     setOpenMatchDialog(false);
   };
@@ -141,6 +170,27 @@ const AdminMatch = () => {
     }
   };
 
+  if (authLoading || loading) {
+    return (
+      <LayoutDefault>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+          <CircularProgress />
+        </Box>
+      </LayoutDefault>
+    );
+  }
+
+  if (!isAuthenticated || !isAdmin) {
+    // Will be redirected by the useEffect, show a loading state
+    return (
+      <LayoutDefault>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+          <CircularProgress />
+        </Box>
+      </LayoutDefault>
+    );
+  }
+
   return (
     <LayoutDefault>
       <Paper sx={{ padding: 4, width: '90%', margin: 'auto', marginTop: 4, borderRadius: 3, boxShadow: 3 }}>
@@ -148,7 +198,7 @@ const AdminMatch = () => {
         <Button 
           variant="outlined" 
           color="secondary" 
-          onClick={() => window.history.back()} 
+          onClick={() => navigate('/admin-console')} 
           sx={{ marginBottom: 2 }}
         >
           Back
@@ -355,7 +405,6 @@ const AdminMatch = () => {
           </DialogActions>
         </Dialog>
 
-
         {successful === "success" && 
           <Typography color="success" align="center" sx={{ marginTop: 2 }}>
             Items matched successfully!
@@ -367,6 +416,21 @@ const AdminMatch = () => {
           </Typography>
         }
       </Paper>
+      
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </LayoutDefault>
   );
 }
