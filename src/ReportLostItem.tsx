@@ -16,13 +16,13 @@ import {
   Box,
   FormHelperText,
   Container,
-  GlobalStyles,
   Tooltip,
   CircularProgress,
 } from '@mui/material';
 import { styled } from '@mui/system';
-import { Email, Phone, Schedule, Send } from '@mui/icons-material';
+import { Email, Phone, Schedule } from '@mui/icons-material';
 import LayoutDefault from './LayoutDefault';
+import { GlobalStyles } from '@mui/material';
 
 const FileInput = styled('input')({
   display: 'none',
@@ -434,80 +434,10 @@ function ReportLostItem() {
                               required
                               error={touched.itemName && !!errors.itemName}
                               helperText={touched.itemName && errors.itemName}
-                              sx={{ mb: 2 }}
                               InputProps={{
                                 sx: { borderRadius: 2 },
                               }}
                               className={errors.itemName ? "error-bounce" : ""}
-                            />
-                          </Grid>
-
-                          <Grid item xs={12} sm={6}>
-                            <Field
-                              name="firstName"
-                              as={TextField}
-                              label="First Name"
-                              fullWidth
-                              required
-                              error={touched.firstName && !!errors.firstName}
-                              helperText={touched.firstName && errors.firstName}
-                              sx={{ mb: 2 }}
-                              InputProps={{
-                                sx: { borderRadius: 2 },
-                              }}
-                              className={errors.firstName ? "error-bounce" : ""}
-                            />
-                          </Grid>
-
-                          <Grid item xs={12} sm={6}>
-                            <Field
-                              name="lastName"
-                              as={TextField}
-                              label="Last Name"
-                              fullWidth
-                              required
-                              error={touched.lastName && !!errors.lastName}
-                              helperText={touched.lastName && errors.lastName}
-                              sx={{ mb: 2 }}
-                              InputProps={{
-                                sx: { borderRadius: 2 },
-                              }}
-                              className={errors.lastName ? "error-bounce" : ""}
-                            />
-                          </Grid>
-
-                          <Grid item xs={12} sm={6}>
-                            <Field
-                              name="email"
-                              as={TextField}
-                              label="Email Address"
-                              type="email"
-                              fullWidth
-                              required
-                              error={touched.email && !!errors.email}
-                              helperText={touched.email && errors.email}
-                              sx={{ mb: 2 }}
-                              InputProps={{
-                                sx: { borderRadius: 2 },
-                              }}
-                              className={errors.email ? "error-bounce" : ""}
-                            />
-                          </Grid>
-
-                          <Grid item xs={12} sm={6}>
-                            <Field
-                              name="phone"
-                              as={TextField}
-                              label="Phone Number"
-                              fullWidth
-                              required
-                              error={touched.phone && !!errors.phone}
-                              helperText={touched.phone && errors.phone}
-                              sx={{ mb: 2 }}
-                              InputProps={{
-                                sx: { borderRadius: 2 },
-                              }}
-                              className={errors.phone ? "error-bounce" : ""}
                             />
                           </Grid>
 
@@ -521,7 +451,6 @@ function ReportLostItem() {
                               InputLabelProps={{ shrink: true }}
                               error={touched.dateLost && !!errors.dateLost}
                               helperText={touched.dateLost && errors.dateLost}
-                              sx={{ mb: 2 }}
                               InputProps={{
                                 sx: { borderRadius: 2 },
                               }}
@@ -536,7 +465,6 @@ function ReportLostItem() {
                               fullWidth
                               error={touched.location && !!errors.location}
                               helperText={touched.location && errors.location}
-                              sx={{ mb: 2 }}
                               InputProps={{
                                 sx: { borderRadius: 2 },
                               }}
@@ -553,7 +481,6 @@ function ReportLostItem() {
                               rows={3}
                               error={touched.description && !!errors.description}
                               helperText={touched.description && errors.description}
-                              sx={{ mb: 2 }}
                               InputProps={{
                                 sx: { borderRadius: 2 },
                               }}
@@ -592,6 +519,78 @@ function ReportLostItem() {
                                 </Box>
                               )}
                             </Box>
+                          </Grid>
+
+                          {/* Separated Contact Information Section */}
+                          <Grid item xs={12}>
+                            <Typography variant="h6" sx={{ mb: 2 }}>
+                              Contact Information
+                            </Typography>
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                            <Field
+                              name="firstName"
+                              as={TextField}
+                              label="First Name"
+                              fullWidth
+                              required
+                              error={touched.firstName && !!errors.firstName}
+                              helperText={touched.firstName && errors.firstName}
+                              InputProps={{
+                                sx: { borderRadius: 2 },
+                              }}
+                              className={errors.firstName ? "error-bounce" : ""}
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                            <Field
+                              name="lastName"
+                              as={TextField}
+                              label="Last Name"
+                              fullWidth
+                              required
+                              error={touched.lastName && !!errors.lastName}
+                              helperText={touched.lastName && errors.lastName}
+                              InputProps={{
+                                sx: { borderRadius: 2 },
+                              }}
+                              className={errors.lastName ? "error-bounce" : ""}
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                            <Field
+                              name="email"
+                              as={TextField}
+                              label="Email Address"
+                              type="email"
+                              fullWidth
+                              required
+                              error={touched.email && !!errors.email}
+                              helperText={touched.email && errors.email}
+                              InputProps={{
+                                sx: { borderRadius: 2 },
+                              }}
+                              className={errors.email ? "error-bounce" : ""}
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                            <Field
+                              name="phone"
+                              as={TextField}
+                              label="Phone Number"
+                              fullWidth
+                              required
+                              error={touched.phone && !!errors.phone}
+                              helperText={touched.phone && errors.phone}
+                              InputProps={{
+                                sx: { borderRadius: 2 },
+                              }}
+                              className={errors.phone ? "error-bounce" : ""}
+                            />
                           </Grid>
 
                           <Grid item xs={12}>
