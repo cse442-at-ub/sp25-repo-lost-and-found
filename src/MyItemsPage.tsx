@@ -423,14 +423,6 @@ function MyItemsPage() {
     <LayoutDefault>
       <Box sx={{ maxWidth: 1200, margin: 'auto', p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <Button 
-            variant="outlined" 
-            startIcon={<ArrowBack />} 
-            onClick={() => navigate('/dashboard')}
-            sx={{ mr: 2 }}
-          >
-            Back to Dashboard
-          </Button>
           <Typography variant="h3" sx={{ textAlign: 'center', flexGrow: 1 }}>
             My Items
           </Typography>
