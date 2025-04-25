@@ -24,7 +24,8 @@ import {
     Divider,
     Stepper,
     Step,
-    StepLabel
+    StepLabel,
+    FormHelperText
 } from '@mui/material';
 import LayoutDefault from './LayoutDefault';
 import { useNavigate } from 'react-router';
@@ -42,6 +43,17 @@ interface FormData {
     state: string;
     zipcode: string;
     pickupLocation: string;
+}
+
+interface FormErrors {
+    name?: string;
+    email?: string;
+    pickupLocation?: string;
+    preferredTime?: string;
+    address?: string;
+    county?: string;
+    state?: string;
+    zipcode?: string;
 }
 
 interface FoundItem {
@@ -71,6 +83,8 @@ const RetrieveForm: React.FC = () => {
         zipcode: '',
         pickupLocation: ''
     });
+
+    const [formErrors, setFormErrors] = useState<FormErrors>({});
 
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
@@ -146,6 +160,10 @@ const RetrieveForm: React.FC = () => {
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
         const { name, value } = e.target;
+        
+        // Clear the error for this field when user makes changes
+        setFormErrors(prev => ({ ...prev, [name]: undefined }));
+        
         if (name === 'preferredTime' && value) {
             // Convert datetime-local format to YYYY-MM-DD HH:MM:SS
             const formattedValue = value.replace('T', ' ') + ':00'; // Add seconds
@@ -160,6 +178,8 @@ const RetrieveForm: React.FC = () => {
     ) => {
         const { name, value } = e.target;
         if (name) {
+            // Clear the error for this field when user makes changes
+            setFormErrors(prev => ({ ...prev, [name]: undefined }));
             setFormData((prev) => ({ ...prev, [name]: value }));
         }
     };
@@ -172,15 +192,102 @@ const RetrieveForm: React.FC = () => {
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
         setFormData((prev) => ({ ...prev, deliveryMethod: e.target.value as 'pickup' | 'shipping' }));
+        
+        // Clear errors related to delivery method
+        if (e.target.value === 'pickup') {
+            setFormErrors(prev => ({
+                ...prev,
+                address: undefined,
+                county: undefined,
+                state: undefined,
+                zipcode: undefined
+            }));
+        } else {
+            setFormErrors(prev => ({
+                ...prev,
+                pickupLocation: undefined
+            }));
+        }
+    };
+
+    const validateStep = (step: number): boolean => {
+        const newErrors: FormErrors = {};
+        
+        if (step === 0) {
+            if (!formData.foundItemId) {
+                setSnackbar({
+                    open: true,
+                    message: 'Please select an item to continue',
+                    severity: 'warning'
+                });
+                return false;
+            }
+            return true;
+        }
+        
+        if (step === 1) {
+            // Validate name and email fields
+            if (!formData.name.trim()) {
+                newErrors.name = 'Name is required';
+            } else if (formData.name.trim().length < 2) {
+                newErrors.name = 'Name must be at least 2 characters';
+            }
+            
+            if (!formData.email.trim()) {
+                newErrors.email = 'Email is required';
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+                newErrors.email = 'Please enter a valid email';
+            }
+            
+            // Validate based on delivery method
+            if (formData.deliveryMethod === 'pickup') {
+                if (!formData.pickupLocation) {
+                    newErrors.pickupLocation = 'Pickup location is required';
+                }
+                
+                // Make preferred time required and validate it
+                if (!formData.preferredTime) {
+                    newErrors.preferredTime = 'Preferred pickup time is required';
+                } else {
+                    const preferredDateTime = new Date(formData.preferredTime);
+                    const dayOfWeek = preferredDateTime.getDay();
+                    const hours = preferredDateTime.getHours();
+                    
+                    // Check if it's a weekday (1-5 is Monday-Friday)
+                    if (dayOfWeek === 0 || dayOfWeek === 6) {
+                        newErrors.preferredTime = 'Invalid time: Pickup must be scheduled Monday through Friday';
+                    }
+                    
+                    // Check if time is between 9 AM (9) and 5 PM (17)
+                    if (hours < 9 || hours >= 17) {
+                        newErrors.preferredTime = 'Invalid time: Pickup must be between 9 AM and 5 PM';
+                    }
+                }
+                
+            } else {
+                if (!formData.address.trim()) {
+                    newErrors.address = 'Address is required';
+                }
+                if (!formData.county.trim()) {
+                    newErrors.county = 'County is required';
+                }
+                if (!formData.state.trim()) {
+                    newErrors.state = 'State is required';
+                }
+                if (!formData.zipcode.trim()) {
+                    newErrors.zipcode = 'Zip code is required';
+                }
+            }
+            
+            setFormErrors(newErrors);
+            return Object.keys(newErrors).length === 0;
+        }
+        
+        return true;
     };
 
     const handleNext = () => {
-        if (activeStep === 0 && !formData.foundItemId) {
-            setSnackbar({
-                open: true,
-                message: 'Please select an item to continue',
-                severity: 'warning'
-            });
+        if (!validateStep(activeStep)) {
             return;
         }
         setActiveStep((prevStep) => prevStep + 1);
@@ -210,19 +317,11 @@ const RetrieveForm: React.FC = () => {
             return;
         }
 
-        // Validate required fields based on delivery method
-        if (formData.deliveryMethod === 'pickup' && !formData.pickupLocation) {
+        // Final validation check before submission
+        if (!validateStep(1)) {
             setSnackbar({
                 open: true,
-                message: 'Please select a pickup location',
-                severity: 'warning'
-            });
-            return;
-        } else if (formData.deliveryMethod === 'shipping' && 
-                  (!formData.address || !formData.county || !formData.state || !formData.zipcode)) {
-            setSnackbar({
-                open: true,
-                message: 'Please fill in all shipping address fields',
+                message: 'Please correct all errors before submitting',
                 severity: 'warning'
             });
             return;
@@ -417,6 +516,8 @@ const RetrieveForm: React.FC = () => {
                                     onChange={handleChange}
                                     fullWidth
                                     required
+                                    error={!!formErrors.name}
+                                    helperText={formErrors.name}
                                     sx={{ mb: 2 }}
                                 />
                             </Grid>
@@ -428,6 +529,8 @@ const RetrieveForm: React.FC = () => {
                                     onChange={handleChange}
                                     fullWidth
                                     required
+                                    error={!!formErrors.email}
+                                    helperText={formErrors.email}
                                     sx={{ mb: 2 }}
                                 />
                             </Grid>
@@ -449,17 +552,23 @@ const RetrieveForm: React.FC = () => {
                         {formData.deliveryMethod === 'pickup' && (
                             <>
                                 <Box sx={{ mb: 2, p: 2, bgcolor: '#e3f2fd', borderRadius: 2 }}>
-                                    <Typography variant="body1">
+                                    <Typography variant="body1" gutterBottom>
                                         ⚠️ Please bring a valid ID (UB Card, Driver's License, etc.) when you come to pick up your item.
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Note: Pickup times must be scheduled between 9 AM and 5 PM, Monday through Friday. This is a required field.
                                     </Typography>
                                 </Box>
 
-                                <FormControl fullWidth sx={{ mb: 2 }}>
+                                <FormControl fullWidth sx={{ mb: 2 }} error={!!formErrors.pickupLocation}>
                                     <InputLabel>Pickup Location</InputLabel>
                                     <Select
                                         name="pickupLocation"
                                         value={formData.pickupLocation}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, pickupLocation: e.target.value as string }))}
+                                        onChange={(e) => {
+                                            setFormErrors(prev => ({ ...prev, pickupLocation: undefined }));
+                                            setFormData(prev => ({ ...prev, pickupLocation: e.target.value as string }));
+                                        }}
                                         required
                                         label="Pickup Location"
                                     >
@@ -468,6 +577,9 @@ const RetrieveForm: React.FC = () => {
                                         <MenuItem value="Capen Hall">1 Capen Hall</MenuItem>
                                         <MenuItem value="Lockwood Library">Lockwood Library - 2nd floor circulation desk</MenuItem>
                                     </Select>
+                                    {formErrors.pickupLocation && (
+                                        <FormHelperText>{formErrors.pickupLocation}</FormHelperText>
+                                    )}
                                 </FormControl>
                                 <TextField
                                     label="Preferred Time for Retrieval"
@@ -476,7 +588,10 @@ const RetrieveForm: React.FC = () => {
                                     value={formData.preferredTime.replace(' ', 'T').slice(0, -3) || ''}
                                     onChange={handleChange}
                                     fullWidth
+                                    required
                                     sx={{ mb: 2 }}
+                                    error={!!formErrors.preferredTime}
+                                    helperText={formErrors.preferredTime}
                                     InputLabelProps={{ shrink: true }}
                                 />
                             </>
@@ -492,6 +607,8 @@ const RetrieveForm: React.FC = () => {
                                         onChange={handleChange}
                                         fullWidth
                                         required
+                                        error={!!formErrors.address}
+                                        helperText={formErrors.address}
                                     />
                                 </Grid>
                                 <Grid item xs={6}>
@@ -502,6 +619,8 @@ const RetrieveForm: React.FC = () => {
                                         onChange={handleChange}
                                         fullWidth
                                         required
+                                        error={!!formErrors.county}
+                                        helperText={formErrors.county}
                                     />
                                 </Grid>
                                 <Grid item xs={3}>
@@ -512,6 +631,8 @@ const RetrieveForm: React.FC = () => {
                                         onChange={handleChange}
                                         fullWidth
                                         required
+                                        error={!!formErrors.state}
+                                        helperText={formErrors.state}
                                     />
                                 </Grid>
                                 <Grid item xs={3}>
@@ -522,6 +643,8 @@ const RetrieveForm: React.FC = () => {
                                         onChange={handleChange}
                                         fullWidth
                                         required
+                                        error={!!formErrors.zipcode}
+                                        helperText={formErrors.zipcode}
                                     />
                                 </Grid>
                             </Grid>
