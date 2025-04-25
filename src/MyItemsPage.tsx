@@ -426,7 +426,7 @@ function MyItemsPage() {
           <Button 
             variant="outlined" 
             startIcon={<ArrowBack />} 
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('#/')}
             sx={{ mr: 2 }}
           >
             Back to Dashboard
