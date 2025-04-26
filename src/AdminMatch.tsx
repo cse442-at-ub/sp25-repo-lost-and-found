@@ -18,9 +18,15 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Alert,
+  Snackbar,
+  CircularProgress,
+  Box
 } from '@mui/material';
 import { Search, CheckCircle, Pending, Cancel } from '@mui/icons-material';
 import LayoutDefault from './LayoutDefault';
+import { useNavigate } from 'react-router';
+import { useAuth } from './components/AuthContext';
 
 interface Item {
   id: number;
@@ -28,35 +34,60 @@ interface Item {
   type: 'Lost' | 'Found';
   reportedBy: string;
   date: string;
-  image: string; // This should be the relative path from the database
+  image: string;
   description: string;
   location: string;
-  status: 'Matched' | 'Pending Confirmation' | 'No Match'; // Added status field
+  status: 'Matched' | 'Pending Confirmation' | 'No Match';
 }
 
 const AdminMatch = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, isAdmin, loading: authLoading } = useAuth();
+  
   const [items, setItems] = useState<Item[]>([]);
   const [search, setSearch] = useState('');
   const [selectedLost, setSelectedLost] = useState<number | null>(null);
   const [selectedFound, setSelectedFound] = useState<number | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null); // State for selected image
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [successful, setSuccessful] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [openImageDialog, setOpenImageDialog] = useState(false);
+  const [openMatchDialog, setOpenMatchDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info' as 'error' | 'warning' | 'info' | 'success'
+  });
 
+  // Check if user is authenticated and is admin
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await fetch('./Backend/getItems.php'); // Fetch items from the backend
-        const data = await response.json();
-        setItems(data);
-      } catch (error) {
-        console.error("Error fetching items:", error);
-      }
-    };
+    if (!authLoading && (!isAuthenticated || !isAdmin)) {
+      setSnackbar({
+        open: true,
+        message: 'Admin access required. Redirecting...',
+        severity: 'error'
+      });
+      setTimeout(() => navigate('/not-admin'), 2000);
+    } else if (!authLoading && isAuthenticated && isAdmin) {
+      fetchItems();
+    }
+  }, [isAuthenticated, isAdmin, authLoading, navigate]);
 
-    fetchItems();
-  }, []);
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('./Backend/getItems.php');
+      const data = await response.json();
+      setItems(data);
+    } catch (error) {
+      console.error("Error fetching items:", error);
+      setErrorMessage("Failed to load items. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value.toLowerCase());
@@ -91,12 +122,12 @@ const AdminMatch = () => {
         const result = await response.json();
 
         if (result.success) {
-          setOpenDialog(true);
+          setOpenMatchDialog(true);
           setSuccessful("success");
           // Update the status of matched items
           setItems(prevItems => prevItems.map(item => {
             if (item.id === selectedLost || item.id === selectedFound) {
-              return { ...item, status: 'Matched' }; // Update status to Matched
+              return { ...item, status: 'Matched' };
             }
             return item;
           }));
@@ -114,9 +145,13 @@ const AdminMatch = () => {
     }
   };
 
-  const handleDialogClose = () => {
-    setOpenDialog(false);
-    setSelectedImage(null); // Reset selected image when closing dialog
+  const handleImageDialogClose = () => {
+    setOpenImageDialog(false);
+    setSelectedImage(null);
+  };
+  
+  const handleMatchDialogClose = () => {
+    setOpenMatchDialog(false);
   };
 
   const filteredItems = items.filter(item =>
@@ -135,6 +170,27 @@ const AdminMatch = () => {
     }
   };
 
+  if (authLoading || loading) {
+    return (
+      <LayoutDefault>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+          <CircularProgress />
+        </Box>
+      </LayoutDefault>
+    );
+  }
+
+  if (!isAuthenticated || !isAdmin) {
+    // Will be redirected by the useEffect, show a loading state
+    return (
+      <LayoutDefault>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+          <CircularProgress />
+        </Box>
+      </LayoutDefault>
+    );
+  }
+
   return (
     <LayoutDefault>
       <Paper sx={{ padding: 4, width: '90%', margin: 'auto', marginTop: 4, borderRadius: 3, boxShadow: 3 }}>
@@ -142,7 +198,7 @@ const AdminMatch = () => {
         <Button 
           variant="outlined" 
           color="secondary" 
-          onClick={() => window.history.back()} 
+          onClick={() => navigate('/admin-console')} 
           sx={{ marginBottom: 2 }}
         >
           Back
@@ -190,16 +246,23 @@ const AdminMatch = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
+                        <Button onClick={() => { 
+                          if (item.image){
+                            setSelectedImage(item.image); 
+                          } else {
+                            setSelectedImage(null); 
+                          }
+                          setOpenImageDialog(true); }}>
                           View Image
                         </Button>
                         <Button 
-                          href={`./Backend/${item.image}`} 
+                          href={item.image ? `./Backend/${item.image}` : undefined} 
                           download 
+                          disabled={!item.image}
                           sx={{ marginLeft: 1 }} 
                           variant="outlined"
                         >
-                          Download
+                         Download
                         </Button>
                       </TableCell>
                       <TableCell>{item.name}</TableCell>
@@ -255,13 +318,21 @@ const AdminMatch = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button onClick={() => { setSelectedImage(item.image); setOpenDialog(true); }}>
+                        <Button onClick={() => {
+                          if (item.image) {
+                            setSelectedImage(item.image);
+                          } else {
+                            setSelectedImage(null);
+                          }
+                          setOpenImageDialog(true);
+                        }}>
                           View Image
                         </Button>
-                        <Button 
-                          href={`./Backend/${item.image}`} 
-                          download 
-                          sx={{ marginLeft: 1 }} 
+                        <Button
+                          href={item.image ? `./Backend/${item.image}` : undefined}
+                          download
+                          disabled={!item.image}
+                          sx={{ marginLeft: 1 }}
                           variant="outlined"
                         >
                           Download
@@ -304,15 +375,33 @@ const AdminMatch = () => {
           Match
         </Button>
 
-        <Dialog open={openDialog} onClose={handleDialogClose}>
+        <Dialog open={openImageDialog} onClose={handleImageDialogClose} maxWidth="md">
           <DialogTitle>Image Preview</DialogTitle>
-          <DialogContent>
-            {selectedImage && <img src={`./Backend/${selectedImage}`} alt="Preview" style={{ width: '100%', height: 'auto' }} />}
+          <DialogContent sx={{ textAlign: 'center' }}>
+            {selectedImage ? ( 
+              <img 
+              src={`./Backend/${selectedImage}`} 
+              alt="Item" 
+              style={{ width: '100%' }} 
+              />
+            ) : (
+              <Typography variant="body1" color="textSecondary">
+                No image uploaded for this item.
+              </Typography>
+            )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleDialogClose} color="primary">
-              Close
-            </Button>
+            <Button onClick={handleImageDialogClose}>Close</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={openMatchDialog} onClose={handleMatchDialogClose}>
+          <DialogTitle>Match Successful</DialogTitle>
+          <DialogContent>
+            <Typography>The items have been successfully matched!</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleMatchDialogClose}>OK</Button>
           </DialogActions>
         </Dialog>
 
@@ -327,6 +416,21 @@ const AdminMatch = () => {
           </Typography>
         }
       </Paper>
+      
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </LayoutDefault>
   );
 }

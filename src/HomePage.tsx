@@ -1,10 +1,21 @@
-import React, { useEffect, useState } from 'react'
-import LayoutDefault from './LayoutDefault'
-import { Box, Button, Card, CardActionArea, CardContent, CardMedia, Grid, Grid2, Typography } from '@mui/material'
-import ReportLostItem from '../public/report-lost-item.png'
-import ReportFoundItem from '../public/report-found-item.png'
-import ClaimItem from '../public/claim-item.png'
-import { useNavigate } from 'react-router'
+import React, { useEffect, useState } from 'react';
+import LayoutDefault from './LayoutDefault';
+import { 
+  Box, 
+  Button, 
+  Card, 
+  CardActionArea, 
+  CardContent, 
+  CardMedia, 
+  Container,
+  Grid, 
+  Typography,
+  Paper
+} from '@mui/material';
+import ReportLostItem from '../public/report-lost-item.png';
+import ReportFoundItem from '../public/report-found-item.png';
+import ClaimItem from '../public/claim-item.png';
+import { useNavigate } from 'react-router';
 
 function HomePage() {   
     const navigate = useNavigate();
@@ -12,23 +23,41 @@ function HomePage() {
 
     useEffect(() => {
         fetch('./Backend/userinfo.php', {
-            credentials: 'include', // Ensures cookies/session are sent with the request
+            credentials: 'include',
         })
         .then(response => response.json())
         .then(data => setUserInfo(data))
         .catch(error => console.error('Error fetching user info:', error));
     }, []);
 
-    console.log(userInfo)
-    if(userInfo['error']) {
-        console.log("Not logged in")
-    } else {
-        console.log(userInfo)
-    }
+    const actionCards = [
+        { 
+            title: "Report Lost Item", 
+            image: ReportLostItem, 
+            action: () => navigate("/report-lost-item"),
+            color: '#4caf50', // Green
+            iconBg: '#e8f5e9' // Light green
+        },
+        { 
+            title: "Report Found Item", 
+            image: ReportFoundItem, 
+            action: () => navigate("/report-found-item"),
+            color: '#2196f3', // Blue
+            iconBg: '#e3f2fd' // Light blue
+        },
+        { 
+            title: "Claim Item", 
+            image: ClaimItem, 
+            action: () => navigate("/claim"),
+            color: '#ff9800', // Orange
+            iconBg: '#fff3e0' // Light orange
+        }
+    ];
 
-  return (
-    <>
+    return (
         <LayoutDefault>
+            <Container maxWidth="lg" sx={{ py: 4 }}>
+                {/* User Info Section - EXACTLY as in original file */}
                 <Box sx={{ display: 'flex', justifyContent: 'right', gap: '20px', margin: '20px' }}>
                     { userInfo["user_id"] ?
                         <>
@@ -42,79 +71,106 @@ function HomePage() {
                     }
                 </Box>
                 
-                <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
+                {/* Main Heading */}
+                <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    flexDirection: 'column',
+                    mb: 6
+                }}>
                     <Typography variant="h4" gutterBottom>
-                    Lost something? Found something?
+                        Lost something? Found something?
                     </Typography>
-                    <Typography variant="h2" gutterBottom>
-                    Lost and Found Portal
+                    <Typography variant="h2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                        Lost and Found Portal
                     </Typography>
                 </Box>
 
-                <Grid container justifyContent={'center'} spacing={12}>
-                    <Grid item size={4}>
-                        <Card sx={{ maxWidth: 345 }}>
-                            <CardActionArea onClick={() => {navigate("/report-lost-item")}}>
-                                <CardMedia
-                                component="img"
-                                image={ReportLostItem}
-                                alt="green iguana"
-                                />
-                                <CardContent>
-                                <Typography gutterBottom variant="h5" component="div">
-                                    Report Lost Item
-                                </Typography>
-                                </CardContent>
-                            </CardActionArea>
-                        </Card>
-                    </Grid>
-                    <Grid item size={4}>
-                        <Card sx={{ maxWidth: 345 }}>
-                            <CardActionArea onClick={() => {navigate("/report-found-item")}}>
-                                <CardMedia
-                                component="img"
-                                image={ReportFoundItem}
-                                alt="green iguana"
-                                />
-                                <CardContent>
-                                <Typography gutterBottom variant="h5" component="div">
-                                    Report Found Item
-                                </Typography>
-                                </CardContent>
-                            </CardActionArea>
-                        </Card>
-                    </Grid>
-                    <Grid item size={4}>
-                        <Card sx={{ maxWidth: 345 }} onClick={() => navigate('/claim')}>
-                            <CardActionArea>
-                                <CardMedia
-                                component="img"
-                                image={ClaimItem}
-                                alt="green iguana"
-                                />
-                                <CardContent>
-                                <Typography gutterBottom variant="h5" component="div">
-                                    Claim Item
-                                </Typography>
-                                </CardContent>
-                            </CardActionArea>
-                        </Card>
-                    </Grid>
+                {/* Action Cards with Larger Images */}
+                <Grid container spacing={6} justifyContent={'center'} sx={{ mb: 6 }}>
+                    {actionCards.map((item, index) => (
+                        <Grid item key={index} xs={12} sm={6} md={4}>
+                            <Paper elevation={3} sx={{ 
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                transition: 'transform 0.3s',
+                                border: `2px solid ${item.color}`,
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    boxShadow: 6
+                                }
+                            }}>
+                                <CardActionArea 
+                                    onClick={item.action}
+                                    sx={{ 
+                                        flexGrow: 1,
+                                        p: 3,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    {/* Larger Image Container */}
+                                    <Box sx={{
+                                        width: 200,
+                                        height: 200,
+                                        mb: 3,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <CardMedia
+                                            component="img"
+                                            image={item.image}
+                                            alt={item.title}
+                                            sx={{ 
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'contain',
+                                                filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.1))'
+                                            }}
+                                        />
+                                    </Box>
+                                    <CardContent sx={{ 
+                                        textAlign: 'center',
+                                        width: '100%',
+                                        backgroundColor: item.iconBg,
+                                        borderRadius: 1
+                                    }}>
+                                        <Typography gutterBottom variant="h5" component="div" sx={{
+                                            color: item.color,
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {item.title}
+                                        </Typography>
+                                    </CardContent>
+                                </CardActionArea>
+                            </Paper>
+                        </Grid>
+                    ))}
                 </Grid>
 
-                <Grid2 container columns={{ xs: 4, sm: 8, md: 12 }} marginTop={'auto'} backgroundColor={'black'} padding={'15px'}>
-                    <Grid2 item size={4} color={"grey"}>
-                        <Typography variant="h4" gutterBottom>
+                {/* Footer Section */}
+                <Box sx={{ 
+                    backgroundColor: 'primary.dark',
+                    color: 'primary.contrastText',
+                    p: 3,
+                    borderRadius: 1,
+                    textAlign: 'center',
+                    mt: 4
+                }}>
+                    <Typography variant="h6" gutterBottom>
                         About
-                        </Typography>
-                        <Typography variant="body" gutterBottom>
-                        We connect people with their lost belongings through a simple and efficient platform. Report lost or found items, browse listings, and get reunited with what matters.
-                        </Typography>
-                    </Grid2>
-                </Grid2>
+                    </Typography>
+                    <Typography variant="body1">
+                        We connect people with their lost belongings through a simple and efficient platform. 
+                        Report lost or found items, browse listings, and get reunited with what matters.
+                    </Typography>
+                </Box>
+            </Container>
         </LayoutDefault>
-    </>
-  )
+    );
 }
 
-export default HomePage
+export default HomePage;

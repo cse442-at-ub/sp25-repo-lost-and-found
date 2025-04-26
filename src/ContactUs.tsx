@@ -1,96 +1,590 @@
-import { useState } from "react";
-import { Button, TextField, Box, Container, Card, CardContent, Typography, Grid2 as Grid, ListItem, List, ListItemIcon, ListItemText } from "@mui/material";
-import { Email, Phone, Schedule } from "@mui/icons-material";
+import { useState, useEffect } from "react";
+import {
+  Button,
+  TextField,
+  Box,
+  Container,
+  Card,
+  CardContent,
+  Typography,
+  Grid2 as Grid,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Alert,
+  CircularProgress,
+  Tooltip,
+  GlobalStyles,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { Email, Phone, Schedule, Send } from "@mui/icons-material";
 import LayoutDefault from "./LayoutDefault";
-import { Link, Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
-const ContactUs = (e: any) => {
-  // const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [resp, setResp] = useState({okay: false, msg: null});
+interface ContactFormData {
+  username: string;
+  name: string;
+  email: string;
+  message: string;
+}
+
+const schema = yup.object().shape({
+  username: yup.string().required("Username is required"),
+  name: yup.string().required("Name is required"),
+  email: yup.string().email("Invalid email format").required("Email is required"),
+  message: yup.string().required("Message is required").min(10, "Message must be at least 10 characters"),
+});
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  minHeight: "100vh",
+  width: "100%",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center", // Center vertically
+  alignItems: "center", // Center horizontally
+  backgroundColor: "white",
+  position: "relative",
+  overflow: "hidden",
+  margin: 0,
+  padding: 0,
+  maxWidth: "none !important",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
+    pointerEvents: "none",
+  },
+}));
+
+const globalStyles = (
+  <GlobalStyles
+    styles={{
+      "@keyframes fadeIn": {
+        from: { opacity: 0, transform: "translateY(20px)" },
+        to: { opacity: 1, transform: "translateY(0)" },
+      },
+      "@keyframes pulse": {
+        "0%, 100%": { transform: "scale(1)" },
+        "50%": { transform: "scale(1.05)" },
+      },
+      "@keyframes bounce": {
+        "0%, 100%": { transform: "translateY(0)" },
+        "50%": { transform: "translateY(-5px)" },
+      },
+      ".fade-in": { animation: "fadeIn 0.6s ease-out" },
+      ".fade-in-delay-1": { animation: "fadeIn 0.8s ease-out" },
+      ".fade-in-delay-2": { animation: "fadeIn 1s ease-out" },
+      ".pulse": { animation: "pulse 1.5s infinite" },
+      ".error-bounce": { animation: "bounce 0.3s" },
+      body: {
+        margin: 0,
+        padding: 0,
+        overflowX: "hidden",
+      },
+      html: {
+        margin: 0,
+        padding: 0,
+      },
+    }}
+  />
+);
+
+const ContactUs = () => {
+  const [resp, setResp] = useState<{ okay: boolean; msg: string | null }>({ okay: false, msg: null });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [chatMessages, setChatMessages] = useState<string[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isAdminAvailable, setIsAdminAvailable] = useState<boolean | null>(null);
   const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid, isDirty },
+    trigger,
+    watch,
+  } = useForm<ContactFormData>({
+    resolver: yupResolver(schema),
+    mode: "onChange",
+    reValidateMode: "onChange",
+    defaultValues: {
+      username: "",
+      name: "",
+      email: "",
+      message: "",
+    },
+  });
 
+  const messageLength = watch("message").length;
+  const validFields = Object.keys(watch()).filter(
+    (key) => !errors[key as keyof ContactFormData] && watch(key as keyof ContactFormData)
+  ).length;
+
+  const onSubmit = async (data: ContactFormData) => {
+    setIsSubmitting(true);
     try {
-      const response = await fetch('./Backend/contactUs.php', {
-        method: 'POST',
+      const response = await fetch("./Backend/contactUs.php", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          username: username,
-          name: name,
-          email: email,
-          message: message
-        }),
+        body: JSON.stringify(data),
       });
       const j = await response.json();
-      console.log(j);
       setResp(j);
-      if (j.okay) navigate('/');
+      if (j.okay) {
+        setTimeout(() => navigate("/"), 3000);
+      }
     } catch (error) {
-      console.error('Error during posting message:', error);
+      console.error("Error during posting message:", error);
+      setResp({ okay: false, msg: "An error occurred. Please try again." });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const handleBlur = async (fieldName: keyof ContactFormData) => {
+    await trigger(fieldName);
+  };
+
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (chatInput.trim()) {
+      setChatMessages([...chatMessages, chatInput]);
+      setChatInput("");
+    }
+  };
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const response = await fetch("./Backend/checkAdminStatus.php", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await response.json();
+        setIsAdminAvailable(data.isAdminLoggedIn);
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        setIsAdminAvailable(false); // Default to unavailable on error
+      }
+    };
+
+    checkAdminStatus();
+  }, []);
+
+  useEffect(() => {
+    if (resp.msg) {
+      const timer = setTimeout(() => setResp({ okay: false, msg: null }), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [resp]);
+
   return (
-    <LayoutDefault>
-    <Typography variant="h3" sx={{textAlign: "center", mt: 10}}>Contact Us</Typography>
-    <Grid container direction="row-reverse" spacing={1} rowSpacing={5} sx={{marginTop: 5, maxWidth: 800, marginLeft: "auto", marginRight: "auto"}}>
-      <Grid size={{xs: 12, md: 4}}>
-        <List sx={{marginLeft: "auto", marginRight: "auto", width: "fit-content"}}>
-          <ListItem>
-            <ListItemIcon><Phone sx={{fontSize: "32pt"}}/></ListItemIcon>
-            <ListItemText primary="1 (716) 234-5678" slotProps={{primary: {fontSize: "16pt"}}} />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon><Email sx={{fontSize: "32pt"}}/></ListItemIcon>
-            <ListItemText primary="lostandfound@email.com" slotProps={{primary: {fontSize: "16pt"}}} />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon><Schedule sx={{fontSize: "32pt"}}/></ListItemIcon>
-            <ListItemText primary="Weekdays 9 AM - 4 PM" slotProps={{primary: {fontSize: "16pt"}}} />
-          </ListItem>
-        </List>
-      </Grid>
-      <Grid size={{xs: 12, md: 8}}>
-        <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", marginRight: "auto", marginLeft: "auto", maxWidth: 600}}>
-          <Card>
-            <CardContent>
-              <Box component="form" onSubmit={handleSubmit} sx={{m: 1}}>
-                <TextField fullWidth required id="username" label="Username"
-                    name="username" autoComplete="username" autoFocus type="username"
-                    onChange={(e) => { setUsername(e.target.value); }}
-                    sx={{m: 1}}/>
-                <TextField fullWidth required id="name" label="Name"
-                    name="name" autoComplete="name" autoFocus type="name"
-                    onChange={(e) => { setName(e.target.value); }}
-                    sx={{m: 1}}/>
-                <TextField fullWidth required id="email" label="Email Address"
-                    name="email" autoComplete="email" autoFocus type="email"
-                    onChange={(e) => { setEmail(e.target.value); }}
-                    sx={{m: 1}}/>
-                <TextField fullWidth required id="message" label="Message"
-                    name="message" autoComplete="message" autoFocus type="message"
-                    multiline minRows={5}
-                    onChange={(e) => { setMessage(e.target.value); }}
-                    sx={{m: 1}}/>
-                <Typography hidden={resp.msg===null} sx={{color: resp.okay?"#000000":"#cc0000"}}>{resp.msg || ""}</Typography>
-                <Button fullWidth variant="contained" type="submit"
-                    // onClick={() => { navigate("/reset-password"); }}
-                    // disabled={email.length === 0}
-                    sx={{m: 1}}>Send</Button>
-              </Box>
-            </CardContent>
-          </Card>
+    <LayoutDefault sx={{ margin: 0, padding: 0, width: "100%" }}>
+      {globalStyles}
+      <StyledContainer disableGutters>
+        <Box sx={{ 
+          backgroundColor: "rgba(255, 255, 255, 0.95)", 
+          py: 4,
+          textAlign: "center", 
+          width: "100%",
+          maxWidth: 1200, // Constrain width for centering
+          mx: "auto",
+        }}>
+          <Container maxWidth="xl" sx={{ margin: 0, padding: { xs: 1, sm: 2, md: 3 } }}>
+            <Typography
+              variant="h2"
+              sx={{ fontWeight: "bold", mb: 1, color: "primary.main" }}
+              className="fade-in"
+            >
+              Let's Connect
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{ mb: 2, fontWeight: "medium", color: "primary.main", opacity: 0.9 }}
+              className="fade-in-delay-1"
+            >
+              Have a question or idea? Reach out to us today!
+            </Typography>
+          </Container>
         </Box>
-      </Grid>
-    </Grid>
+        <Container 
+          maxWidth="xl" 
+          sx={{ 
+            py: 4,
+            margin: 0,
+            paddingLeft: { xs: 1, sm: 2, md: 3 },
+            paddingRight: { xs: 1, sm: 2, md: 3 },
+            width: "100%",
+            maxWidth: 1200, // Constrain width for centering
+            mx: "auto",
+          }}
+        >
+          <Grid
+            container
+            direction={{ xs: "column-reverse", md: "row-reverse" }}
+            spacing={{ xs: 2, md: 3 }}
+            sx={{ maxWidth: 1200, mx: "auto" }}
+          >
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Card
+                sx={{
+                  background: "rgba(255, 255, 255, 0.95)",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+                  borderRadius: 3,
+                  position: { md: "sticky" },
+                  top: 10,
+                }}
+                className="fade-in-delay-2"
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{ mb: 2, fontWeight: "bold", color: "primary.main" }}
+                  >
+                    Contact Info
+                  </Typography>
+                  <List>
+                    <Tooltip title="Call us">
+                      <ListItem
+                        sx={{
+                          "&:hover": { backgroundColor: "rgba(25,118,210,0.1)", borderRadius: 2 },
+                          transition: "background-color 0.2s",
+                        }}
+                      >
+                        <ListItemIcon>
+                          <Phone
+                            sx={{
+                              fontSize: 36,
+                              color: "primary.main",
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "transform 0.2s",
+                            }}
+                          />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="1 (716) 234-5678"
+                          slotProps={{ primary: { fontSize: "1.2rem", fontWeight: "medium", color: "primary.main" } }}
+                        />
+                      </ListItem>
+                    </Tooltip>
+                    <Tooltip title="Email us">
+                      <ListItem
+                        sx={{
+                          "&:hover": { backgroundColor: "rgba(25,118,210,0.1)", borderRadius: 2 },
+                          transition: "background-color 0.2s",
+                        }}
+                      >
+                        <ListItemIcon>
+                          <Email
+                            sx={{
+                              fontSize: 36,
+                              color: "primary.main",
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "transform 0.2s",
+                            }}
+                          />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="lostandfound@email.com"
+                          slotProps={{ primary: { fontSize: "1.2rem", fontWeight: "medium", color: "primary.main" } }}
+                        />
+                      </ListItem>
+                    </Tooltip>
+                    <Tooltip title="Our hours">
+                      <ListItem
+                        sx={{
+                          "&:hover": { backgroundColor: "rgba(25,118,210,0.1)", borderRadius: 2 },
+                          transition: "background-color 0.2s",
+                        }}
+                      >
+                        <ListItemIcon>
+                          <Schedule
+                            sx={{
+                              fontSize: 36,
+                              color: "primary.main",
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "transform 0.2s",
+                            }}
+                          />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Weekdays 9 AM - 4 PM"
+                          slotProps={{ primary: { fontSize: "1.2rem", fontWeight: "medium", color: "primary.main" } }}
+                        />
+                      </ListItem>
+                    </Tooltip>
+                  </List>
+                </CardContent>
+              </Card>
+              <Card
+                sx={{
+                  background: "rgba(255, 255, 255, 0.95)",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+                  borderRadius: 3,
+                  mt: 2,
+                }}
+                className="fade-in-delay-2"
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{ mb: 2, fontWeight: "bold", color: "primary.main" }}
+                  >
+                    Chat with Us
+                  </Typography>
+                  {isAdminAvailable === null ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Checking admin availability...
+                    </Typography>
+                  ) : isAdminAvailable ? (
+                    <>
+                      <Box
+                        sx={{
+                          height: 150,
+                          overflowY: "auto",
+                          border: "1px solid #e0e0e0",
+                          borderRadius: 2,
+                          p: 2,
+                          mb: 2,
+                          backgroundColor: "#f9f9f9",
+                        }}
+                      >
+                        {chatMessages.length === 0 ? (
+                          <Typography variant="body2" color="text.secondary">
+                            Start the conversation...
+                          </Typography>
+                        ) : (
+                          chatMessages.map((msg, index) => (
+                            <Typography key={index} variant="body2" sx={{ mb: 1 }}>
+                              {msg}
+                            </Typography>
+                          ))
+                        )}
+                      </Box>
+                      <Box
+                        component="form"
+                        onSubmit={handleChatSubmit}
+                        sx={{ display: "flex", gap: 1 }}
+                      >
+                        <TextField
+                          fullWidth
+                          placeholder="Type your message..."
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          InputProps={{ "aria-label": "Chat message" }}
+                          sx={{
+                            "& .MuiInputBase-root": { borderRadius: 2, backgroundColor: "#fff" },
+                            "& .Mui-focused": { boxShadow: "0 0 0 3px rgba(25,118,210,0.2)" },
+                          }}
+                        />
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          sx={{
+                            borderRadius: 2,
+                            background: "linear-gradient(135deg, #1976d2 0%, #115293 100%)",
+                            "&:hover": {
+                              background: "linear-gradient(135deg, #115293 0%, #0d3c6e 100%)",
+                            },
+                            transition: "background 0.2s",
+                          }}
+                        >
+                          <Send />
+                        </Button>
+                      </Box>
+                    </>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Admin is not available. You can send us a message.
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 12, md: 7 }}>
+              <Card
+                sx={{
+                  background: "rgba(255, 255, 255, 0.95)",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+                  borderRadius: 3,
+                  maxWidth: { xs: "100%", sm: 600 },
+                  mx: "auto",
+                }}
+                className="fade-in-delay-1"
+              >
+                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                  <Typography
+                    variant="h5"
+                    sx={{ mb: 2, fontWeight: "bold", color: "primary.main" }}
+                  >
+                    Send Us a Message
+                  </Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" sx={{ color: "primary.main" }}>
+                      Progress: {validFields}/4 fields completed
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: 6,
+                        backgroundColor: "#e0e0e0",
+                        borderRadius: 3,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: `${(validFields / 4) * 100}%`,
+                          height: "100%",
+                          backgroundColor: "primary.main",
+                          transition: "width 0.3s",
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                  <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <TextField
+                      fullWidth
+                      required
+                      id="username"
+                      label="Username"
+                      placeholder="Enter your username"
+                      {...register("username")}
+                      error={!!errors.username}
+                      helperText={errors.username?.message}
+                      onBlur={() => handleBlur("username")}
+                      InputProps={{ "aria-label": "Username" }}
+                      sx={{
+                        "& .MuiInputBase-root": { borderRadius: 2, backgroundColor: "#fff" },
+                        "& .Mui-focused": { boxShadow: "0 0 0 3px rgba(25,118,210,0.2)" },
+                        "& .MuiInputLabel-root": { color: "primary.main" },
+                        "& .MuiInputLabel-root.Mui-focused": { color: "primary.main" },
+                      }}
+                      className={errors.username ? "error-bounce" : ""}
+                    />
+                    <TextField
+                      fullWidth
+                      required
+                      id="name"
+                      label="Name"
+                      placeholder="Enter your full name"
+                      {...register("name")}
+                      error={!!errors.name}
+                      helperText={errors.name?.message}
+                      onBlur={() => handleBlur("name")}
+                      InputProps={{ "aria-label": "Name" }}
+                      sx={{
+                        "& .MuiInputBase-root": { borderRadius: 2, backgroundColor: "#fff" },
+                        "& .Mui-focused": { boxShadow: "0 0 0 3px rgba(25,118,210,0.2)" },
+                        "& .MuiInputLabel-root": { color: "primary.main" },
+                        "& .MuiInputLabel-root.Mui-focused": { color: "primary.main" },
+                      }}
+                      className={errors.name ? "error-bounce" : ""}
+                    />
+                    <TextField
+                      fullWidth
+                      required
+                      id="email"
+                      label="Email Address"
+                      placeholder="Enter your email"
+                      {...register("email")}
+                      error={!!errors.email}
+                      helperText={errors.email?.message}
+                      onBlur={() => handleBlur("email")}
+                      InputProps={{ "aria-label": "Email Address" }}
+                      sx={{
+                        "& .MuiInputBase-root": { borderRadius: 2, backgroundColor: "#fff" },
+                        "& .Mui-focused": { boxShadow: "0 0 0 3px rgba(25,118,210,0.2)" },
+                        "& .MuiInputLabel-root": { color: "primary.main" },
+                        "& .MuiInputLabel-root.Mui-focused": { color: "primary.main" },
+                      }}
+                      className={errors.email ? "error-bounce" : ""}
+                    />
+                    <TextField
+                      fullWidth
+                      required
+                      id="message"
+                      label="Message"
+                      placeholder="Enter your message"
+                      {...register("message")}
+                      error={!!errors.message}
+                      helperText={
+                        <Box>
+                          {errors.message?.message}
+                          <Typography variant="caption" sx={{ display: "block", mt: 1, color: "primary.main" }}>
+                            {messageLength}/10 characters
+                          </Typography>
+                        </Box>
+                      }
+                      onBlur={() => handleBlur("message")}
+                      multiline
+                      minRows={5}
+                      InputProps={{ "aria-label": "Message" }}
+                      sx={{
+                        "& .MuiInputBase-root": { borderRadius: 2, backgroundColor: "#fff" },
+                        "& .Mui-focused": { boxShadow: "0 0 0 3px rgba(25,118,210,0.2)" },
+                        "& .MuiInputLabel-root": { color: "primary.main" },
+                        "& .MuiInputLabel-root.Mui-focused": { color: "primary.main" },
+                      }}
+                      className={errors.message ? "error-bounce" : ""}
+                    />
+                    {resp.msg && (
+                      <Alert
+                        severity={resp.okay ? "success" : "error"}
+                        sx={{
+                          borderRadius: 2,
+                          backgroundColor: resp.okay ? "rgba(0,200,83,0.1)" : "rgba(211,47,47,0.1)",
+                          color: resp.okay ? "primary.main" : "error.main",
+                        }}
+                        aria-live="polite"
+                        className="fade-in"
+                      >
+                        {resp.msg}
+                      </Alert>
+                    )}
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      type="submit"
+                      disabled={!isValid || !isDirty || isSubmitting}
+                      sx={{
+                        py: 1.8,
+                        borderRadius: 2,
+                        background: "linear-gradient(135deg, #1976d2 0%, #115293 100%)",
+                        "&:hover": {
+                          background: "linear-gradient(135deg, #115293 0%, #0d3c6e 100%)",
+                          transform: "scale(1.03)",
+                        },
+                        "&:disabled": { background: "#b0bec5" },
+                        transition: "transform 0.2s, background 0.2s",
+                        textTransform: "none",
+                        fontSize: "1.2rem",
+                        fontWeight: "medium",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                      }}
+                      className={isValid && isDirty && !isSubmitting ? "pulse" : ""}
+                    >
+                      {isSubmitting ? <CircularProgress size={28} color="inherit" /> : "Send Message"}
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Container>
+      </StyledContainer>
     </LayoutDefault>
   );
 };

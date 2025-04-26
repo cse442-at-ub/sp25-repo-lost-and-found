@@ -1,15 +1,12 @@
-import React, { Fragment } from 'react';
-import { Route } from 'react-router';
-import ResponsiveAppBar from './components/ResponsiveAppBar';
-import { Box } from '@mui/material';
+import React from 'react';
 
-const LayoutDefault = (props: any) => (
-  <>
-    <Box sx={{minHeight: '100vh', display: 'flex', flexDirection: 'column'}}>
-      <ResponsiveAppBar />
-      {props.children}
-    </Box>
-  </>
-);
+function LayoutDefault({ children }: { children: React.ReactNode }) {
+    console.log('Rendering LayoutDefault');
+    return (
+        <div>
+            {children} {/* Remove ResponsiveAppBar */}
+        </div>
+    );
+}
 
 export default LayoutDefault;

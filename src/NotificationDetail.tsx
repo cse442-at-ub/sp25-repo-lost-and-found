@@ -155,6 +155,8 @@ const NotificationDetail: React.FC = () => {
     
     // For found items
     if (notification.link.includes('/found-items')) return true;
+
+    if (notification.link.includes('/retrieve-form')) return true;
     
     // For any other valid links
     return notification.link.startsWith('/') || notification.link.startsWith('http');
@@ -244,6 +246,19 @@ const NotificationDetail: React.FC = () => {
                     </Typography>
                   </Paper>
                 </>
+              )}
+              {notification.title === "Item Match Found" && (
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    size="large"
+                    onClick={() => navigate('/retrieve-form')}
+                    sx={{ px: 4, py: 1.5 }}
+                  >
+                    Fill Out Retrieval Form
+                  </Button>
+                </Box>
               )}
             
             

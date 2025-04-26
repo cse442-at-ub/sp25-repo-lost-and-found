@@ -1,178 +1,253 @@
-import React, { useState } from 'react';
+import React from 'react';
 import LayoutDefault from './LayoutDefault';
-import { Box, Button, TextField, Typography } from "@mui/material";
+import { Box, Button, TextField, Typography, useMediaQuery, Alert } from "@mui/material";
+import RocketIcon from '@mui/icons-material/Rocket';
+import { Formik, Form, Field, FormikErrors } from 'formik';
+import * as yup from 'yup';
+import { useNavigate } from 'react-router-dom';
+
+// Validation schema
+const registerSchema = yup.object().shape({
+    firstName: yup
+        .string()
+        .required('First name is required')
+        .min(2, 'First name must be at least 2 characters')
+        .max(50, 'First name must be less than 50 characters'),
+    lastName: yup
+        .string()
+        .required('Last name is required')
+        .min(2, 'Last name must be at least 2 characters')
+        .max(50, 'Last name must be less than 50 characters'),
+    username: yup
+        .string()
+        .required('Username is required')
+        .min(3, 'Username must be at least 3 characters')
+        .max(20, 'Username must be less than 20 characters')
+        .matches(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+    email: yup
+        .string()
+        .email('Please enter a valid email address')
+        .required('Email is required'),
+    password: yup
+        .string()
+        .required('Password is required')
+        .min(8, 'Password must be at least 8 characters')
+        .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+        .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+        .matches(/[0-9]/, 'Password must contain at least one number')
+        .matches(/[!@#$%^&*()\-_=]/, 'Password must contain at least one special character'),
+    confirmPassword: yup
+        .string()
+        .required('Please confirm your password')
+        .oneOf([yup.ref('password')], 'Passwords must match')
+});
+
+const initialValues = {
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
+};
+
+type FormValues = typeof initialValues & {
+    server?: string;
+};
 
 function RegisterPage() {
-  // State variables for input values and error handling
-  const [firstName, setFirstName] = useState<string>("");
-  const [lastName, setLastName] = useState<string>("");
-  const [username, setUsername] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [passwordError, setPasswordError] = useState<boolean>(false);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<boolean>(false);
-  const [emailError, setEmailError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const isMobile = useMediaQuery('(max-width:600px)');
+  const navigate = useNavigate();
 
-  // Function to validate email format
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  // Function to validate password requirements
-  const validatePasswordRequirements = (password: string) => {
-    const minLength = password.length >= 8;
-    const hasLowercase = /[a-z]/.test(password);
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const allowedSpecialChars = /[!@#$%^&*()\-_=]/;
-    const hasSpecialChar = allowedSpecialChars.test(password);
-    const isValid = minLength && hasLowercase && hasUppercase && hasNumber && hasSpecialChar;
-
-    setPasswordError(!isValid);
-    return isValid;
-  };
-
-  // Function to handle registration
-  const handleRegister = async () => {
-    setErrorMessage(""); // Clear previous errors
-
-    if (!firstName || !lastName || !username || !email || !password) {
-      setErrorMessage("All fields are required.");
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setEmailError(true);
-      setErrorMessage("Please enter a valid email address.");
-      return;
-    } else {
-      setEmailError(false);
-    }
-
-    if (!validatePasswordRequirements(password)) {
-      setErrorMessage("Password does not meet requirements.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setConfirmPasswordError(true);
-      setErrorMessage("Passwords do not match.");
-      return;
-    } else {
-      setConfirmPasswordError(false);
-    }
-
+  const handleSubmit = async (values: FormValues, { setSubmitting, setErrors }: any) => {
     try {
-
       const response = await fetch("./Backend/register.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, username, email, password }),
+        body: JSON.stringify({
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
+          username: values.username.trim(),
+          email: values.email.trim(),
+          password: values.password
+        }),
       });
 
       const data = await response.json();
-      if (data.success) {
-        console.log("Registration successful");
+      if (data.status !== "success") {
+        setErrors({ server: data.message || "Registration failed." });
       } else {
-        setErrorMessage(data.message || "Registration failed.");
+        // Show success message and redirect after 2 seconds
+        setErrors({ server: `success:${data.message}` });
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       }
     } catch (error) {
-      setErrorMessage("Server error. Please try again.");
+      setErrors({ server: "Server error. Please try again." });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <LayoutDefault>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px' }}>
-        <Typography variant="h4">Register</Typography>
-
-        {/* First Name Field */}
-        <TextField 
-          label="First Name" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={firstName} 
-          onChange={(e) => setFirstName(e.target.value)}
-        />
-
-        {/* Last Name Field */}
-        <TextField 
-          label="Last Name" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={lastName} 
-          onChange={(e) => setLastName(e.target.value)}
-        />
-
-        {/* Username Field */}
-        <TextField 
-          label="Username" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={username} 
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        
-        {/* Email Field with Validation */}
-        <TextField 
-          label="Email" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)}
-          error={emailError} 
-        />
-        {emailError && (
-          <Typography sx={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
-            Please enter a valid email address.
+      <Box
+        sx={{
+          display: isMobile ? 'block' : 'flex',
+          minHeight: '100vh',
+          width: '100%',
+        }}
+      >
+        {/* Welcome Left Section */}
+        <Box
+          sx={{
+            background: 'linear-gradient(180deg, #0d47a1, #1976d2)',
+            color: 'white',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 4,
+            borderTopLeftRadius: '12px',
+            borderBottomLeftRadius: '12px',
+          }}
+        >
+          <Box component="img" src="./logo.png" alt="Logo" sx={{ width: "auto", height: "auto", mb: 1 }} />
+          <Typography align="center" mt={2} maxWidth="300px">
+            Welcome to Lost & Found Portal! Sign up to get started.
           </Typography>
-        )}
+        </Box>
 
-        {/* Password Field */}
-        <TextField 
-          label="Password" 
-          type="password" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          error={passwordError} 
-        />
-        {passwordError && (
-          <Typography sx={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
-            Password must be at least 8 characters long and contain at least one lowercase letter, 
-            one uppercase letter, one number, and one special character (!@#$%^&*()-=_).
+        {/* Form Right Section */}
+        <Box
+          sx={{
+            flex: 1,
+            backgroundColor: 'white',
+            padding: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            borderTopRightRadius: '12px',
+            borderBottomRightRadius: '12px',
+            boxShadow: isMobile ? 'none' : '0px 4px 20px rgba(0,0,0,0.1)',
+            width: isMobile ? '100%' : 'auto',
+          }}
+        >
+          <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+            Create your account
           </Typography>
-        )}
 
-        {/* Confirm Password Field */}
-        <TextField 
-          label="Confirm Password" 
-          type="password" 
-          variant="outlined" 
-          sx={{ margin: '10px', width: '300px' }} 
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          error={confirmPasswordError} 
-        />
-        {confirmPasswordError && (
-          <Typography sx={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
-            Passwords do not match.
-          </Typography>
-        )}
+          <Formik<FormValues>
+            initialValues={initialValues}
+            validationSchema={registerSchema}
+            onSubmit={handleSubmit}
+            validateOnBlur
+            validateOnChange
+          >
+            {({ errors, touched, isSubmitting, isValid, dirty }) => (
+              <Form>
+                <Field
+                  as={TextField}
+                  name="firstName"
+                  label="First Name"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.firstName && Boolean(errors.firstName)}
+                  helperText={touched.firstName && errors.firstName}
+                  disabled={isSubmitting}
+                />
+                <Field
+                  as={TextField}
+                  name="lastName"
+                  label="Last Name"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.lastName && Boolean(errors.lastName)}
+                  helperText={touched.lastName && errors.lastName}
+                  disabled={isSubmitting}
+                />
+                <Field
+                  as={TextField}
+                  name="username"
+                  label="Username"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.username && Boolean(errors.username)}
+                  helperText={touched.username && errors.username}
+                  disabled={isSubmitting}
+                />
+                <Field
+                  as={TextField}
+                  name="email"
+                  label="E-mail Address"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.email && Boolean(errors.email)}
+                  helperText={touched.email && errors.email}
+                  disabled={isSubmitting}
+                />
+                <Field
+                  as={TextField}
+                  name="password"
+                  label="Password"
+                  type="password"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.password && Boolean(errors.password)}
+                  helperText={touched.password && errors.password}
+                  disabled={isSubmitting}
+                />
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Password must be at least 8 characters long and include:
+                  <ul style={{ marginTop: 4, marginBottom: 4, paddingLeft: 20 }}>
+                    <li>One uppercase letter</li>
+                    <li>One lowercase letter</li>
+                    <li>One number</li>
+                    <li>One special character (!@#$%^&*()-_=)</li>
+                  </ul>
+                </Typography>
+                <Field
+                  as={TextField}
+                  name="confirmPassword"
+                  label="Confirm Password"
+                  type="password"
+                  variant="standard"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={touched.confirmPassword && Boolean(errors.confirmPassword)}
+                  helperText={touched.confirmPassword && errors.confirmPassword}
+                  disabled={isSubmitting}
+                />
 
-        {/* Error Message */}
-        {errorMessage && (
-          <Typography sx={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
-            {errorMessage}
-          </Typography>
-        )}
+                {errors.server && (
+                  <Alert 
+                    severity={errors.server.startsWith('success:') ? 'success' : 'error'} 
+                    sx={{ mb: 2 }}
+                  >
+                    {errors.server.replace('success:', '')}
+                  </Alert>
+                )}
 
-        <Button variant="contained" sx={{ marginTop: '10px' }} onClick={handleRegister}>
-          Sign Up
-        </Button>
+                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                  <Button 
+                    type="submit"
+                    variant="contained"
+                    disabled={!isValid || !dirty || isSubmitting}
+                  >
+                    {isSubmitting ? 'Signing Up...' : 'Sign Up'}
+                  </Button>
+                </Box>
+              </Form>
+            )}
+          </Formik>
+        </Box>
       </Box>
     </LayoutDefault>
   );

@@ -1,5 +1,4 @@
 <?php
-
 // Database configuration
 require_once 'db.php';
 require_once 'session.php';
@@ -104,13 +103,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $lostUserId = $lostDetails['user_id'];
                     $itemName = $lostDetails['name'] ?? 'Item';
                     
+                    // Create retrieval link without item ID - user will select from available items
+                    $retrieveLink = "/retrieve-form";
+                    
                     $notifyResult = createNotification(
                         $lostUserId,
                         'Item Match Found',
                         "A $itemName matching your lost item description has been found.",
                         'success',
-                        "/claim?item=$lost_item_id",
-                        "Good news! We've found an item that matches your lost $itemName. Please visit the claim page to verify and claim your item."
+                        $retrieveLink,
+                        "Good news! We've found an item that matches your lost $itemName. Please click here to submit a retrieval form to claim your item. You'll be able to select the matching item from the list of available items. You'll need to verify your identity when picking up the item."
                     );
                     error_log("createNotification result for lost user $lostUserId: " . ($notifyResult ? "Success (ID: $notifyResult)" : "Failed"));
                 }
@@ -125,8 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'Match Found for Your Found Item',
                         "Someone has reported losing a $itemName that matches what you found.",
                         'success',
-                        "/found-items?id=$found_item_id",
-                        "Good news! We've identified the potential owner of the $itemName you found. Thank you for your help!"
+                        "/found-items",
+                        "Good news! We've identified the potential owner of the $itemName you found. Thank you for your help! The item owner has been notified to complete the retrieval form."
                     );
                     error_log("createNotification result for found user $foundUserId: " . ($notifyResult ? "Success (ID: $notifyResult)" : "Failed"));
                 }
@@ -145,10 +147,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $title = 'Item Match Found';
                     $message = "A $itemName matching your lost item description has been found.";
                     $type = 'success';
+                    $link = "/retrieve-form";
+                    $details = "Good news! We've found an item that matches your lost $itemName. Please click here to submit a retrieval form to claim your item. You'll be able to select the matching item from the list of available items.";
                     
                     $directStmt = $conn->prepare("INSERT INTO notification_system 
-                        (user_id, title, message, type) VALUES (?, ?, ?, ?)");
-                    $directStmt->bind_param("isss", $lostUserId, $title, $message, $type);
+                        (user_id, title, message, type, link, details) VALUES (?, ?, ?, ?, ?, ?)");
+                    $directStmt->bind_param("isssss", $lostUserId, $title, $message, $type, $link, $details);
                     $directStmt->execute();
                 }
                 
@@ -158,10 +162,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $title = 'Match Found for Your Found Item';
                     $message = "Someone has reported losing a $itemName that matches what you found.";
                     $type = 'success';
+                    $link = "/found-items";
+                    $details = "Good news! We've identified the potential owner of the $itemName you found. Thank you for your help! The item owner has been notified to complete the retrieval form.";
                     
                     $directStmt = $conn->prepare("INSERT INTO notification_system 
-                        (user_id, title, message, type) VALUES (?, ?, ?, ?)");
-                    $directStmt->bind_param("isss", $foundUserId, $title, $message, $type);
+                        (user_id, title, message, type, link, details) VALUES (?, ?, ?, ?, ?, ?)");
+                    $directStmt->bind_param("isssss", $foundUserId, $title, $message, $type, $link, $details);
                     $directStmt->execute();
                 }
             } catch (Exception $e) {

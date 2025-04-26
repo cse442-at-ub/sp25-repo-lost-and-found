@@ -14,17 +14,54 @@ import {
   ListItemText,
   Snackbar,
   Alert,
-  AlertTitle
+  AlertTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CircularProgress,
+  useTheme,
+  Grid,
+  LinearProgress,
+  Divider
 } from '@mui/material';
 import { 
   Visibility, 
   VisibilityOff, 
   CheckCircle, 
-  RadioButtonUnchecked 
+  RadioButtonUnchecked,
+  LockReset as LockResetIcon,
+  Security as SecurityIcon,
+  ArrowBack as ArrowBackIcon 
 } from '@mui/icons-material';
-
+import { Formik, Form, Field } from 'formik';
+import * as yup from 'yup';
 import LayoutDefault from './LayoutDefault';
-import { useNavigate } from 'react-router'
+import { useNavigate } from 'react-router';
+
+// Define interface for form values
+interface FormValues {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+// Validation schema
+const changePasswordSchema = yup.object().shape({
+  currentPassword: yup.string().required('Current password is required'),
+  newPassword: yup
+    .string()
+    .required('New password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .matches(/[0-9]/, 'Password must contain at least one number')
+    .matches(/[!@#$%^&*()\-_]/, 'Password must contain at least one special character')
+    .matches(/^[a-zA-Z0-9!@#$%^&*()_\-]+$/, 'Password contains invalid characters'),
+  confirmPassword: yup
+    .string()
+    .required('Please confirm your password')
+    .oneOf([yup.ref('newPassword')], 'Passwords must match')
+});
 
 // Define interface for password validation
 interface PasswordValidation {
@@ -42,16 +79,20 @@ interface ApiResponse {
   message: string;
 }
 
+const initialValues: FormValues = {
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+};
+
 const ChangePassword: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
 
-  const [currentPassword, setCurrentPassword] = useState<string>('');
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
+  
   // Enhanced notification with MUI styling
   const [notification, setNotification] = useState<{
     open: boolean;
@@ -63,22 +104,6 @@ const ChangePassword: React.FC = () => {
     severity: 'success'
   });
 
-  // Password validation criteria
-  const specialCharacters = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_'];
-  
-  const validatePassword = (password: string): PasswordValidation => {
-    return {
-      length: password.length >= 8,
-      lowercase: /[a-z]/.test(password),
-      uppercase: /[A-Z]/.test(password),
-      number: /[0-9]/.test(password),
-      specialChar: specialCharacters.some(char => password.includes(char)),
-      noInvalidChars: /^[a-zA-Z0-9!@#$%^&*()_\-]+$/.test(password)
-    };
-  };
-
-  const passwordValidation = validatePassword(newPassword);
-
   const handleCloseNotification = () => {
     setNotification({
       ...notification,
@@ -86,76 +111,33 @@ const ChangePassword: React.FC = () => {
     });
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    
-    // Frontend validation
-    if (newPassword !== confirmPassword) {
-      setNotification({
-        open: true,
-        message: "Passwords do not match",
-        severity: 'error'
-      });
-      return;
-    }
-  
-    const isValidPassword = Object.values(passwordValidation).every(Boolean);
-    
-    if (!isValidPassword) {
-      setNotification({
-        open: true,
-        message: "Please meet all password requirements",
-        severity: 'error'
-      });
-      return;
-    }
-  
+  const onSubmit = async (values: FormValues) => {
     try {
-      setLoading(true);
-      
-      // Updated API endpoint
       const response = await fetch('./Backend/changepassword.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-          confirmPassword
-        }),
-        credentials: 'include' // Include cookies for session authentication
+        body: JSON.stringify(values),
+        credentials: 'include'
       });
   
-      const data: ApiResponse = await response.json();
+      const result: ApiResponse = await response.json();
       
-      if (data.success) {
-        // Password change was successful
+      if (result.success) {
         setNotification({
           open: true,
-          message: data.message || "Password changed successfully",
+          message: result.message || "Password changed successfully",
           severity: 'success'
         });
         
-        // Reset form fields after successful password change
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        
-        // Reset password visibility states too
-        setShowCurrentPassword(false);
-        setShowNewPassword(false);
-        setShowConfirmPassword(false);
-        
-        // Navigate to login page after a short delay to allow the user to see the success message
         setTimeout(() => {
           navigateToLogin();
         }, 2000);
       } else {
-        // Password change failed
         setNotification({
           open: true,
-          message: data.message || "Failed to change password",
+          message: result.message || "Failed to change password",
           severity: 'error'
         });
       }
@@ -166,8 +148,6 @@ const ChangePassword: React.FC = () => {
         message: "An error occurred while changing your password",
         severity: 'error'
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -180,13 +160,10 @@ const ChangePassword: React.FC = () => {
 
   const navigateToLogin = async () => {
     try {
-      // Call the logout endpoint to end the session
-      const response = await fetch('./Backend/logout.php', {
+      await fetch('./Backend/logout.php', {
         method: 'GET',
-        credentials: 'include' // Include cookies for session
+        credentials: 'include'
       });
-      
-      // Navigate to login page regardless of logout success
       navigate('/login');
     } catch (error) {
       console.error('Error during logout:', error);
@@ -194,154 +171,343 @@ const ChangePassword: React.FC = () => {
     }
   };
 
+  const handleCancel = () => {
+    navigate('/settings');
+  };
+
   return (
     <LayoutDefault>
-      <Container component="main" maxWidth="sm" sx={{ mt: 8 }}>
-        <Paper elevation={0} sx={{ py: 4, px: 3 }}>
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
+      <Container component="main" maxWidth="md" sx={{ mt: 8, mb: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+          <Button 
+            variant="outlined" 
+            startIcon={<ArrowBackIcon />} 
+            onClick={handleCancel}
+            sx={{ position: 'absolute', left: { xs: 16, md: 32 } }}
           >
-            <Box sx={{ width: '100%', mb: 2 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="current-password"
-              label="Current Password"
-              type={showCurrentPassword ? 'text' : 'password'}
-              id="current-password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => togglePasswordVisibility(setShowCurrentPassword, showCurrentPassword)}
-                      edge="end"
-                    >
-                      {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="new-password"
-              label="New Password"
-              type={showNewPassword ? 'text' : 'password'}
-              id="new-password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => togglePasswordVisibility(setShowNewPassword, showNewPassword)}
-                      edge="end"
-                    >
-                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirm-password"
-              label="Confirm New Password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              id="confirm-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => togglePasswordVisibility(setShowConfirmPassword, showConfirmPassword)}
-                      edge="end"
-                    >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 2 }}
-            />
-            </Box>
-
-            <Box sx={{ width: '100%', mb: 2 }}>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                Password Requirements:
-              </Typography>
-              <List dense>
-                {[
-                  { text: 'The length of the password is at least 8', check: passwordValidation.length },
-                  { text: 'The password contains at least 1 lowercase letter', check: passwordValidation.lowercase },
-                  { text: 'The password contains at least 1 uppercase letter', check: passwordValidation.uppercase },
-                  { text: 'The password contains at least 1 number', check: passwordValidation.number },
-                  { text: 'The password contains at least 1 of the 12 special characters', check: passwordValidation.specialChar },
-                  { text: 'The password does not contain any invalid characters', check: passwordValidation.noInvalidChars }
-                ].map((item, index) => (
-                  <ListItem key={index} disableGutters>
-                    <ListItemIcon>
-                      {item.check ? <CheckCircle color="success" /> : <RadioButtonUnchecked color="disabled" />}
-                    </ListItemIcon>
-                    <ListItemText primary={item.text} />
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              sx={{ 
-                mt: 1, 
-                mb: 2, 
-                py: 1.5,
-                backgroundColor: '#1976d2',
-                '&:hover': {
-                  backgroundColor: '#1565c0',
-                }
-              }}
+            Back to Settings
+          </Button>
+        </Box>
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 0, 
+            overflow: 'hidden', 
+            borderRadius: 2,
+            background: 'linear-gradient(to right bottom, #ffffff, #f8f9fa)'
+          }}
+        >
+          <CardHeader 
+            title={
+              <Box display="flex" alignItems="center" justifyContent="center">
+                <SecurityIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+                <Typography variant="h5">Change Password</Typography>
+              </Box>
+            }
+            sx={{ 
+              backgroundColor: theme.palette.primary.light,
+              color: theme.palette.primary.contrastText,
+              textAlign: 'center',
+              py: 2
+            }}
+          />
+          
+          <CardContent sx={{ p: 4 }}>
+            <Formik
+              initialValues={initialValues}
+              validationSchema={changePasswordSchema}
+              onSubmit={onSubmit}
+              validateOnMount={true}
+              validateOnChange={true}
+              validateOnBlur={true}
             >
-              {loading ? 'CHANGING PASSWORD...' : 'CHANGE PASSWORD'}
-            </Button>
+              {({ 
+                errors, 
+                touched, 
+                isSubmitting,
+                values,
+                isValid,
+                dirty,
+                handleChange,
+                handleBlur,
+                setFieldTouched
+              }) => {
+                // Calculate password strength
+                const getPasswordStrength = (): { percent: number; color: string; text: string } => {
+                  if (!values.newPassword) {
+                    return { percent: 0, color: theme.palette.grey[500], text: 'Not set' };
+                  }
+                  
+                  const validations = {
+                    length: values.newPassword.length >= 8,
+                    lowercase: /[a-z]/.test(values.newPassword),
+                    uppercase: /[A-Z]/.test(values.newPassword),
+                    number: /[0-9]/.test(values.newPassword),
+                    specialChar: /[!@#$%^&*()\-_]/.test(values.newPassword),
+                    noInvalidChars: /^[a-zA-Z0-9!@#$%^&*()_\-]+$/.test(values.newPassword)
+                  };
+                  
+                  const validCount = Object.values(validations).filter(Boolean).length;
+                  
+                  if (validCount <= 2) {
+                    return { percent: 20, color: theme.palette.error.main, text: 'Very Weak' };
+                  }
+                  
+                  if (validCount <= 4) {
+                    return { percent: 40, color: theme.palette.error.main, text: 'Weak' };
+                  }
+                  
+                  if (validCount === 5) {
+                    return { percent: 70, color: theme.palette.warning.main, text: 'Medium' };
+                  }
+                  
+                  return { percent: 100, color: theme.palette.success.main, text: 'Strong' };
+                };
 
-            <Typography 
-              variant="body2" 
-              color="text.secondary" 
-              sx={{ 
-                mt: 2, 
-                cursor: 'pointer',
-                '&:hover': {
-                  textDecoration: 'underline'
-                }
+                const passwordStrength = getPasswordStrength();
+
+                // Helper function to show error state
+                const showError = (field: keyof FormValues) => {
+                  return (touched[field] || dirty) && !!errors[field];
+                };
+
+                // Helper function to get error message
+                const getErrorText = (field: keyof FormValues) => {
+                  return (touched[field] || dirty) ? errors[field] : '';
+                };
+
+                return (
+                  <Form>
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <Box>
+                          <Typography variant="h6" sx={{ mb: 3 }}>Enter Your Passwords</Typography>
+
+                          <Field
+                            name="currentPassword"
+                            as={TextField}
+                            margin="normal"
+                            required
+                            fullWidth
+                            label="Current Password"
+                            type={showCurrentPassword ? 'text' : 'password'}
+                            error={showError('currentPassword')}
+                            helperText={getErrorText('currentPassword')}
+                            onBlur={(e: React.FocusEvent) => {
+                              handleBlur(e);
+                              setFieldTouched('currentPassword', true);
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <LockResetIcon color="action" />
+                                </InputAdornment>
+                              ),
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <IconButton
+                                    onClick={() => togglePasswordVisibility(setShowCurrentPassword, showCurrentPassword)}
+                                    edge="end"
+                                    size="large"
+                                  >
+                                    {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                                  </IconButton>
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{ mb: 3 }}
+                          />
+                          
+                          <Divider sx={{ my: 3 }} />
+                          
+                          <Field
+                            name="newPassword"
+                            as={TextField}
+                            margin="normal"
+                            required
+                            fullWidth
+                            label="New Password"
+                            type={showNewPassword ? 'text' : 'password'}
+                            error={showError('newPassword')}
+                            helperText={getErrorText('newPassword')}
+                            onBlur={(e: React.FocusEvent) => {
+                              handleBlur(e);
+                              setFieldTouched('newPassword', true);
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <SecurityIcon color="primary" />
+                                </InputAdornment>
+                              ),
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <IconButton
+                                    onClick={() => togglePasswordVisibility(setShowNewPassword, showNewPassword)}
+                                    edge="end"
+                                    size="large"
+                                  >
+                                    {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                                  </IconButton>
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{ mb: 1 }}
+                          />
+                          
+                          {/* Password strength indicator */}
+                          {values.newPassword && (
+                            <Box sx={{ mt: 1, mb: 3 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                <Typography variant="caption">Password Strength</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 'bold', color: passwordStrength.color }}>
+                                  {passwordStrength.text}
+                                </Typography>
+                              </Box>
+                              <LinearProgress 
+                                variant="determinate" 
+                                value={passwordStrength.percent} 
+                                sx={{ 
+                                  height: 8, 
+                                  borderRadius: 1,
+                                  '& .MuiLinearProgress-bar': {
+                                    backgroundColor: passwordStrength.color
+                                  }
+                                }} 
+                              />
+                            </Box>
+                          )}
+                          
+                          <Field
+                            name="confirmPassword"
+                            as={TextField}
+                            margin="normal"
+                            required
+                            fullWidth
+                            label="Confirm New Password"
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            error={showError('confirmPassword')}
+                            helperText={getErrorText('confirmPassword')}
+                            onBlur={(e: React.FocusEvent) => {
+                              handleBlur(e);
+                              setFieldTouched('confirmPassword', true);
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <SecurityIcon color="primary" />
+                                </InputAdornment>
+                              ),
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <IconButton
+                                    onClick={() => togglePasswordVisibility(setShowConfirmPassword, showConfirmPassword)}
+                                    edge="end"
+                                    size="large"
+                                  >
+                                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                                  </IconButton>
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{ mb: 4 }}
+                          />
+                          
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                            <Button
+                              variant="outlined"
+                              fullWidth
+                              onClick={handleCancel}
+                              disabled={isSubmitting}
+                              sx={{ py: 1.5 }}
+                            >
+                              Cancel
+                            </Button>
+                            
+                            <Button
+                              type="submit"
+                              fullWidth
+                              variant="contained"
+                              disabled={!isValid || isSubmitting || !dirty}
+                              sx={{ 
+                                py: 1.5,
+                                backgroundColor: theme.palette.primary.main,
+                                fontWeight: 'bold',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                '&:hover': {
+                                  backgroundColor: theme.palette.primary.dark,
+                                  boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
+                                }
+                              }}
+                              startIcon={isSubmitting ? <CircularProgress size={24} color="inherit" /> : null}
+                            >
+                              {isSubmitting ? 'CHANGING PASSWORD...' : 'CHANGE PASSWORD'}
+                            </Button>
+                          </Box>
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <Paper 
+                          variant="outlined" 
+                          sx={{ 
+                            p: 3, 
+                            height: '100%', 
+                            bgcolor: '#f8f9fa',
+                            borderColor: theme.palette.primary.light,
+                            borderRadius: 2
+                          }}
+                        >
+                          <Typography variant="h6" sx={{ mb: 2 }}>Password Requirements</Typography>
+                          
+                          <List dense>
+                            {[
+                              { text: 'The length of the password is at least 8', check: values.newPassword?.length >= 8 },
+                              { text: 'The password contains at least 1 lowercase letter', check: /[a-z]/.test(values.newPassword || '') },
+                              { text: 'The password contains at least 1 uppercase letter', check: /[A-Z]/.test(values.newPassword || '') },
+                              { text: 'The password contains at least 1 number', check: /[0-9]/.test(values.newPassword || '') },
+                              { text: 'The password contains at least 1 of the 12 special characters', check: /[!@#$%^&*()\-_]/.test(values.newPassword || '') },
+                              { text: 'The password does not contain any invalid characters', check: /^[a-zA-Z0-9!@#$%^&*()_\-]+$/.test(values.newPassword || '') }
+                            ].map((item, index) => (
+                              <ListItem key={index} disableGutters sx={{ py: 1 }}>
+                                <ListItemIcon sx={{ minWidth: 34 }}>
+                                  {item.check ? (
+                                    <CheckCircle color="success" />
+                                  ) : (
+                                    <RadioButtonUnchecked color="disabled" />
+                                  )}
+                                </ListItemIcon>
+                                <ListItemText 
+                                  primary={item.text} 
+                                  primaryTypographyProps={{ 
+                                    variant: 'body2',
+                                    color: item.check ? 'text.primary' : 'text.secondary'
+                                  }} 
+                                />
+                              </ListItem>
+                            ))}
+                          </List>
+                          
+                          <Divider sx={{ my: 2 }} />
+                          
+                          <Typography variant="body2" color="text.secondary" paragraph>
+                            Strong passwords are essential for keeping your account secure.
+                          </Typography>
+                          
+                          <Typography variant="body2" color="text.secondary">
+                            Allowed special characters: <code>! @ # $ % ^ & * ( ) - _</code>
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    </Grid>
+                  </Form>
+                );
               }}
-              onClick={navigateToLogin}
-            >
-              Return to Login
-            </Typography>
-          </Box>
+            </Formik>
+          </CardContent>
         </Paper>
       </Container>
 
-      {/* Notification system using MUI Material */}
       <Snackbar 
         open={notification.open} 
         autoHideDuration={6000} 

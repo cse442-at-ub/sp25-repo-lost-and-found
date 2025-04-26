@@ -12,6 +12,7 @@ $password = '50519587'; // Replace with appropriate credentials
 $conn = new mysqli($host, $username, $password, $dbname);
 
 if ($conn->connect_error) {
+    error_log("Database connection failed: " . $conn->connect_error);
     echo json_encode([
         "success" => false, 
         "message" => "Database connection failed: " . $conn->connect_error
@@ -21,6 +22,7 @@ if ($conn->connect_error) {
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
+    error_log("User not logged in, session: " . json_encode($_SESSION));
     echo json_encode([
         "success" => false, 
         "message" => "User not logged in"
@@ -31,8 +33,8 @@ if (!isset($_SESSION['user_id'])) {
 $userId = $_SESSION['user_id'];
 
 try {
-    // Fetch found items that are available to claim (not claimed yet)
-    // Exclude items already claimed by this user
+    // Log the query execution
+    error_log("Fetching found items for user ID: $userId");
     $sql = "SELECT 
                 f.id, 
                 f.item_name, 
@@ -64,26 +66,35 @@ try {
                 f.date_found DESC";
     
     $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        $error = $conn->error;
+        error_log("Prepare failed: $error");
+        throw new Exception("Prepare failed: $error");
+    }
     $stmt->bind_param("i", $userId);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        $error = $stmt->error;
+        error_log("Execute failed: $error");
+        throw new Exception("Execute failed: $error");
+    }
     $result = $stmt->get_result();
     
     $items = [];
     while ($row = $result->fetch_assoc()) {
-        // Create image path for frontend use
         if ($row['image']) {
-            // Assuming images are stored in a specific directory
             $row['image'] = "Backend/" . $row['image'];
         }
         $items[] = $row;
     }
     
+    error_log("Successfully fetched " . count($items) . " items");
     echo json_encode([
         "success" => true,
         "items" => $items
     ]);
     
 } catch (Exception $e) {
+    error_log("Error in getFoundItems.php: " . $e->getMessage());
     echo json_encode([
         "success" => false,
         "message" => "Error fetching found items: " . $e->getMessage()
