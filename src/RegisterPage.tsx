@@ -243,7 +243,6 @@ function RegisterPage() {
                   >
                     {isSubmitting ? 'Signing Up...' : 'Sign Up'}
                   </Button>
-                  <Button variant="outlined" disabled={isSubmitting}>Sign In</Button>
                 </Box>
               </Form>
             )}
